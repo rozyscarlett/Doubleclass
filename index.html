@@ -9,17 +9,18 @@
 :root{
   --ink:#17231F; --ink2:#3B4B45; --muted:#7A8A82; --faint:#A3B0A8;
   --paper:#EEF1EB; --surface:#FFFFFF; --line:#DCE2D9; --line2:#EAEEE7;
-  --mb:#9C4568; --mb-soft:#F9EBF1; --mb-line:#EBC9D8;
-  --ls:#2E7355; --ls-soft:#E4F0E9; --ls-line:#C2DDCD;
+  --mb:#BE4A74; --mb-soft:#FAEAF0; --mb-line:#EFC8D9;
+  --ls:#24518F; --ls-soft:#E8EEF8; --ls-line:#C7D6EC;
+  --all:#2E7355; --all-soft:#E4F0E9; --all-line:#C2DDCD;
   --pre:#B23A64;   --pre-bg:#FCE9EF;   --pre-ln:#F2C8D7;
-  --post:#2C5F96;  --post-bg:#E7EFFA;  --post-ln:#C7D9EF;
+  --post:#2E7C9E;  --post-bg:#E4F2F7;  --post-ln:#BEDCE8;
   --kids:#8E6A14;  --kids-bg:#FDF3D9;  --kids-ln:#F0DFAE;
   --senior:#2E6B37;--senior-bg:#E5F1E5;--senior-ln:#C4E0C7;
   --hold:#1E2624;
   --amber:#A9702A; --amber-soft:#F7EEDF;
   --danger:#A63A34;
   --r:10px;
-  --accent:var(--ls); --accent-soft:var(--ls-soft); --accent-line:var(--ls-line);
+  --accent:var(--all); --accent-soft:var(--all-soft); --accent-line:var(--all-line);
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -73,7 +74,7 @@ a{color:inherit}
 .progsw{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
 .progsw button{padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .progsw button.on{color:#fff}
-.progsw button.on[data-p="all"]{background:var(--ink2)}
+.progsw button.on[data-p="all"]{background:var(--all)}
 .progsw button.on[data-p="mamabebe"]{background:var(--mb)}
 .progsw button.on[data-p="lifestage"]{background:var(--ls)}
 
@@ -192,9 +193,9 @@ tbody tr.click:hover{background:#F8FAF7}
 .authcard .lg{font-size:21px;font-weight:700;letter-spacing:.16em;margin-bottom:3px}
 .authcard .tag{font-size:12.5px;color:var(--muted);margin-bottom:24px}
 .err{background:#FBEDEC;border:1px solid #EDCFCD;color:var(--danger);padding:9px 11px;border-radius:8px;font-size:12.5px;margin-bottom:14px}
-.ok{background:var(--ls-soft);border:1px solid var(--ls-line);color:var(--ls);padding:9px 11px;border-radius:8px;font-size:12.5px;margin-bottom:14px}
+.ok{background:var(--all-soft);border:1px solid var(--all-line);color:var(--all);padding:9px 11px;border-radius:8px;font-size:12.5px;margin-bottom:14px}
 .swap{margin-top:16px;text-align:center;font-size:12.5px;color:var(--muted)}
-.swap button{color:var(--ls);font-weight:600}
+.swap button{color:var(--all);font-weight:600}
 
 /* toast */
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:#fff;
@@ -1249,12 +1250,13 @@ function Dashboard({program, me, members, logs, staff, go}){
   const ms = members.filter(m=>program==="all"||m.program===program);
   const nActive = ms.filter(m=>ACTIVE_STATUS.includes(m.status)).length;
   const nHold   = ms.filter(m=>HOLD_STATUS.includes(m.status)).length;
-  const isLS = program==="lifestage";
-  const pair = isLS
-    ? [["키즈", ms.filter(m=>(m.status||"").startsWith("키즈")).length],
-       ["시니어", ms.filter(m=>(m.status||"").startsWith("시니어")).length]]
-    : [["산전", ms.filter(m=>(m.status||"").startsWith("산전")).length],
-       ["산후", ms.filter(m=>(m.status||"").startsWith("산후")).length]];
+  const act = ms.filter(m=>ACTIVE_STATUS.includes(m.status));
+  const nBy = pre => act.filter(m=>(m.status||"").startsWith(pre)).length;
+  const pair =
+    program==="all"      ? [["MamaBebe", act.filter(m=>m.program==="mamabebe").length],
+                            ["Life Stage", act.filter(m=>m.program==="lifestage").length]]
+  : program==="lifestage"? [["키즈", nBy("키즈")], ["시니어", nBy("시니어")]]
+  :                        [["산전", nBy("산전")], ["산후", nBy("산후")]];
 
   const soon = ms
     .filter(m=>PRENATAL.includes(m.status) && m.due_date)
@@ -1404,10 +1406,10 @@ function App(){
   // 프로그램에 따라 액센트 색 전환
   useEffect(()=>{
     const root=document.documentElement;
-    const mb = program==="mamabebe";
-    root.style.setProperty("--accent", mb?"var(--mb)":"var(--ls)");
-    root.style.setProperty("--accent-soft", mb?"var(--mb-soft)":"var(--ls-soft)");
-    root.style.setProperty("--accent-line", mb?"var(--mb-line)":"var(--ls-line)");
+    const key = program==="mamabebe" ? "mb" : program==="lifestage" ? "ls" : "all";
+    root.style.setProperty("--accent", `var(--${key})`);
+    root.style.setProperty("--accent-soft", `var(--${key}-soft)`);
+    root.style.setProperty("--accent-line", `var(--${key}-line)`);
   },[program]);
 
   if(!supa) return <SetupScreen/>;
