@@ -276,6 +276,12 @@ function currentWeek(m){
   if(m.reg_week == null || m.reg_week === "") return null;
   return Number(m.reg_week) + Math.floor(daysBetween(m.registered_at, todayStr())/7);
 }
+function postWeek(m){
+  if(!m || !m.delivered_at) return null;
+  if(!/^(산후|출산)/.test(m.status||"")) return null;
+  const d = Math.floor(daysBetween(m.delivered_at, todayStr())/7);
+  return d < 0 ? null : d;
+}
 function progOf(status){
   if(!status) return null;
   if(/^(산전|산후|출산)/.test(status)) return "mamabebe";
@@ -353,6 +359,16 @@ function WeekMeter({week}){
       <span className="bar"><i style={{width:pct+"%"}}/></span>
     </span>
   );
+}
+function WeekCell({m, admin}){
+  const pre = PRENATAL.includes(m.status);
+  if(pre){
+    const w = admin ? currentWeek(m) : m.current_week;
+    return <WeekMeter week={w}/>;
+  }
+  const pw = postWeek(m);
+  if(pw!=null) return <span className="wk"><b>산후 {pw}주</b></span>;
+  return <span className="sm2">—</span>;
 }
 function Empty({title, hint}){
   return <div className="empty"><b>{title}</b>{hint}</div>;
@@ -451,12 +467,14 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
   const blank = {
     program: program==="all" ? "mamabebe" : program,
     registered_at: todayStr(), status:"", name:"", phone:"", birth_date:"",
-    reg_week:"", due_date:"", time_slot:"", emergency_phone:"", emergency_relation:"", notes:""
+    reg_week:"", due_date:"", delivered_at:"", time_slot:"",
+    emergency_phone:"", emergency_relation:"", notes:""
   };
   const [f,setF]=useState(member ? {...blank, ...member} : blank);
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState("");
   const [logNotes,setLogNotes]=useState([]);
+  const [history,setHistory]=useState([]);
   const isNew = !member;
   const canDelete = me.role==="owner" && !isNew;
   const statusList = f.program==="mamabebe" ? MB_STATUS : LS_STATUS;
@@ -468,6 +486,9 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
     supa.from("member_log_notes").select("*").eq("member_id",member.id)
       .order("class_date",{ascending:false}).limit(30)
       .then(({data})=>setLogNotes(data||[]));
+    supa.from("member_status_history").select("*").eq("member_id",member.id)
+      .order("changed_at",{ascending:false}).limit(20)
+      .then(({data})=>setHistory(data||[]));
   },[member]);
 
   const save=async()=>{
@@ -478,7 +499,8 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
       program:f.program, registered_at:f.registered_at||todayStr(), status:f.status,
       name:f.name.trim(), phone:f.phone||null, birth_date:f.birth_date||null,
       reg_week: f.reg_week===""||f.reg_week==null ? null : Number(f.reg_week),
-      due_date:f.due_date||null, time_slot:f.time_slot||null,
+      due_date:f.due_date||null, delivered_at:f.delivered_at||null,
+      time_slot:f.time_slot||null,
       emergency_phone:f.emergency_phone||null, emergency_relation:f.emergency_relation||null,
       notes:f.notes||null
     };
@@ -503,6 +525,7 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
 
   const age = yearAge(f.birth_date);
   const wk = currentWeek(f);
+  const pw = postWeek(f);
 
   return (
     <Modal title={isNew?"회원 추가":"회원 정보"} onClose={onClose} wide
@@ -548,17 +571,23 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
         </Field>
       </div>
 
-      {f.program==="mamabebe" && (
+      {f.program==="mamabebe" && (<>
         <div className="grid2">
           <Field label={"등록 시점 주차" + (isPre && wk!=null ? `  ·  오늘 ${wk}주차` : "")}>
             <input type="number" min="1" max="45" value={f.reg_week??""} disabled={!isPre}
               placeholder={isPre?"예: 18":"산전 상태에서만 사용"} onChange={e=>set("reg_week",e.target.value)}/>
           </Field>
-          <Field label={isPre ? "출산예정일" : "출산일"}>
-            <input type="date" value={f.due_date||""} onChange={e=>set("due_date",e.target.value)}/>
+          <Field label="출산예정일">
+            <input type="date" value={f.due_date||""} disabled={!isPre}
+              onChange={e=>set("due_date",e.target.value)}/>
           </Field>
         </div>
-      )}
+        <Field label={"출산일" + (pw!=null ? `  ·  산후 ${pw}주` : "")}>
+          <input type="date" value={f.delivered_at||""} onChange={e=>set("delivered_at",e.target.value)}/>
+        </Field>
+        {isPre && f.delivered_at &&
+          <div className="ok" style={{marginTop:-6}}>출산일이 있는데 상태가 아직 산전입니다. 산후 상태로 바꿔주세요.</div>}
+      </>)}
 
       <div className="grid2">
         <Field label="비상연락처"><input type="tel" value={f.emergency_phone||""} onChange={e=>set("emergency_phone",e.target.value)}/></Field>
@@ -568,6 +597,17 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
       <Field label="특이사항">
         <textarea value={f.notes||""} onChange={e=>set("notes",e.target.value)} placeholder="부상 이력, 주의할 동작, 기타 메모"/>
       </Field>
+
+      {history.length>1 && (
+        <div className="rev" style={{marginTop:4}}>
+          <div style={{fontSize:12,fontWeight:700,color:"var(--ink)",marginBottom:8}}>상태 변경 이력</div>
+          {history.map(h=>(
+            <div key={h.id}>
+              {fmtStamp(h.changed_at)} · {h.from_status ? `${h.from_status} → ${h.to_status}` : `${h.to_status} 등록`}
+            </div>
+          ))}
+        </div>
+      )}
 
       {logNotes.length>0 && (
         <div className="rev" style={{marginTop:4}}>
@@ -635,7 +675,7 @@ function MembersPage({program, me, members, staff, reload, toast}){
               <th>상태</th><th>이름</th>
               {admin && <th>연락처</th>}
               {admin && <th>생년월일 · 나이</th>}
-              <th>현재 주차</th>
+              <th>주차</th>
               <th>출산(예정)일</th>
               {admin && <th>주 시간대</th>}
               <th>특이사항</th>
@@ -643,7 +683,6 @@ function MembersPage({program, me, members, staff, reload, toast}){
             <tbody>
             {rows.map(m=>{
               const pre = PRENATAL.includes(m.status);
-              const wk = admin ? currentWeek(m) : m.current_week;
               return (
                 <tr key={m.id} className="click" onClick={()=>setOpen(m)}>
                   <td className="sm2">{fmtDate(m.registered_at)}</td>
@@ -651,8 +690,11 @@ function MembersPage({program, me, members, staff, reload, toast}){
                   <td className="nm">{m.name}</td>
                   {admin && <td className="sm2">{m.phone||"—"}</td>}
                   {admin && <td className="sm2">{m.birth_date ? `${fmtDate(m.birth_date)} · ${yearAge(m.birth_date)}세` : "—"}</td>}
-                  <td><WeekMeter week={wk}/></td>
-                  <td className={"due"+(pre?" est":"")}>{m.due_date?fmtDate(m.due_date):"—"}</td>
+                  <td><WeekCell m={m} admin={admin}/></td>
+                  <td className={"due"+(pre?" est":"")}>
+                    {pre ? (m.due_date?fmtDate(m.due_date):"—")
+                         : (m.delivered_at?fmtDate(m.delivered_at):(m.due_date?fmtDate(m.due_date):"—"))}
+                  </td>
                   {admin && <td className="sm2">{m.time_slot||"—"}</td>}
                   <td className="sm2" style={{maxWidth:210,whiteSpace:"pre-wrap"}}>{m.notes||"—"}</td>
                 </tr>
@@ -669,9 +711,13 @@ function MembersPage({program, me, members, staff, reload, toast}){
     {open && !admin && open!=="new" && (
       <Modal title={open.name} onClose={()=>setOpen(null)}>
         <Field label="현재 상태"><div><span className={chipClass(open.status)}>{open.status}</span></div></Field>
-        <Field label="현재 주차"><div><WeekMeter week={open.current_week}/></div></Field>
+        <Field label="주차"><div><WeekCell m={open} admin={false}/></div></Field>
         <Field label="출산(예정)일">
-          <div className={"due"+(PRENATAL.includes(open.status)?" est":"")}>{open.due_date?fmtDate(open.due_date):"—"}</div>
+          <div className={"due"+(PRENATAL.includes(open.status)?" est":"")}>
+            {PRENATAL.includes(open.status)
+              ? (open.due_date?fmtDate(open.due_date):"—")
+              : (open.delivered_at?fmtDate(open.delivered_at):"—")}
+          </div>
         </Field>
         <Field label="특이사항"><div style={{whiteSpace:"pre-wrap"}}>{open.notes||"—"}</div></Field>
       </Modal>
@@ -1107,7 +1153,6 @@ function Dashboard({program, me, members, logs, staff, go}){
   const admin = me.role!=="instructor";
   const ms = members.filter(m=>program==="all"||m.program===program);
   const active = ms.filter(m=>m.status!=="종료");
-  const wkOf = m => admin ? currentWeek(m) : m.current_week;
 
   const soon = ms
     .filter(m=>PRENATAL.includes(m.status) && m.due_date)
@@ -1157,7 +1202,7 @@ function Dashboard({program, me, members, logs, staff, go}){
               <tr key={m.id}>
                 <td className="nm">{m.name}</td>
                 <td><span className={chipClass(m.status)}>{m.status}</span></td>
-                <td><WeekMeter week={wkOf(m)}/></td>
+                <td><WeekCell m={m} admin={admin}/></td>
                 <td className="due est">{fmtDate(m.due_date)}</td>
                 <td className="sm2">{daysBetween(todayStr(), m.due_date)}일</td>
               </tr>
