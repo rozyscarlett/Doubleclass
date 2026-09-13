@@ -9,8 +9,13 @@
 :root{
   --ink:#17231F; --ink2:#3B4B45; --muted:#7A8A82; --faint:#A3B0A8;
   --paper:#EEF1EB; --surface:#FFFFFF; --line:#DCE2D9; --line2:#EAEEE7;
-  --mb:#AC4A62; --mb-soft:#F8EAEE; --mb-line:#E9CBD4;
-  --ls:#2C7168; --ls-soft:#E3F0EC; --ls-line:#BFDCD4;
+  --mb:#9C4568; --mb-soft:#F9EBF1; --mb-line:#EBC9D8;
+  --ls:#2E7355; --ls-soft:#E4F0E9; --ls-line:#C2DDCD;
+  --pre:#B23A64;   --pre-bg:#FCE9EF;   --pre-ln:#F2C8D7;
+  --post:#2C5F96;  --post-bg:#E7EFFA;  --post-ln:#C7D9EF;
+  --kids:#8E6A14;  --kids-bg:#FDF3D9;  --kids-ln:#F0DFAE;
+  --senior:#2E6B37;--senior-bg:#E5F1E5;--senior-ln:#C4E0C7;
+  --hold:#1E2624;
   --amber:#A9702A; --amber-soft:#F7EEDF;
   --danger:#A63A34;
   --r:10px;
@@ -122,16 +127,19 @@ tbody tr.click:hover{background:#F8FAF7}
 /* status chip */
 .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;
   background:#F0F3EF;color:var(--ink2);border:1px solid var(--line)}
-.chip.mb{background:var(--mb-soft);color:var(--mb);border-color:var(--mb-line)}
-.chip.ls{background:var(--ls-soft);color:var(--ls);border-color:var(--ls-line)}
-.chip.hold{background:var(--amber-soft);color:var(--amber);border-color:#E8D6B8}
-.chip.end{background:#F1F2F1;color:var(--faint)}
+.chip.pre{background:var(--pre-bg);color:var(--pre);border-color:var(--pre-ln)}
+.chip.post{background:var(--post-bg);color:var(--post);border-color:var(--post-ln)}
+.chip.kids{background:var(--kids-bg);color:var(--kids);border-color:var(--kids-ln)}
+.chip.senior{background:var(--senior-bg);color:var(--senior);border-color:var(--senior-ln)}
+.chip.hold{background:var(--hold);color:#E7ECEA;border-color:var(--hold)}
+.chip.done{background:#F0F2F0;color:#7C8A84;border-color:#E2E6E1}
+.chip.off{background:#F0F2F0;color:#9AA79F;border-color:#E2E6E1}
 
 /* gestation meter — 40주 */
 .wk{display:flex;align-items:center;gap:7px;white-space:nowrap}
 .wk b{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
 .wk .bar{width:54px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
-.wk .bar i{display:block;height:100%;background:var(--mb);border-radius:2px}
+.wk .bar i{display:block;height:100%;background:var(--pre);border-radius:2px}
 .wk.late .bar i{background:var(--amber)}
 
 /* filters */
@@ -144,6 +152,7 @@ tbody tr.click:hover{background:#F8FAF7}
 /* stats */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.stat{display:flex;flex-direction:column;justify-content:center;min-height:84px}
 .stat .v{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
 .stat .k{font-size:12px;color:var(--muted);margin-top:4px}
 
@@ -168,6 +177,9 @@ tbody tr.click:hover{background:#F8FAF7}
 .pickres button:hover{background:#F5F8F4}
 .att{border:1px solid var(--line);border-radius:8px;padding:10px 11px;margin-top:8px;background:#FAFBF9}
 .att .hd{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.att .hd select{width:auto;padding:3px 8px;font-size:12px;border-radius:999px}
+.timerow{display:flex;gap:8px}
+.timerow select{flex:1}
 .att textarea{min-height:44px;font-size:12.5px;background:var(--surface)}
 
 /* revision trail */
@@ -205,7 +217,11 @@ tbody tr.click:hover{background:#F8FAF7}
   .modal{border-radius:0;min-height:100vh}
   .modal-h{border-radius:0}
   .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .scrollx table{min-width:640px}
+  .scrollx table{min-width:760px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat{padding:12px 13px;min-height:76px}
+  .stat .v{font-size:22px}
+  .stat .k{font-size:11.5px;line-height:1.35}
 }
 </style>
 </head>
@@ -246,8 +262,12 @@ if (cfg0) supa = window.supabase.createClient(cfg0.url, cfg0.key);
 
 /* ================= 상수 ================= */
 const PRENATAL = ["산전반","산전반+개인","산전개인","산전홀드"];
-const MB_STATUS = ["산전반","산전반+개인","산전개인","산전홀드","산후반","산후반+개인","산후개인","산후홀드","출산","출산홀드","종료"];
-const LS_STATUS = ["키즈반","키즈반+개인","키즈개인","시니어반","시니어+개인","종료"];
+const MB_STATUS = ["산전반","산전반+개인","산전개인","산전홀드","산후반","산후반+개인","산후개인","산후홀드","출산","출산홀드","재등록","종료"];
+const LS_STATUS = ["키즈반","키즈반+개인","키즈개인","시니어반","시니어+개인","홀드","재등록","종료"];
+const ACTIVE_STATUS = ["산전반","산전반+개인","산전개인","산후반","산후반+개인","산후개인",
+                       "키즈반","키즈반+개인","키즈개인","시니어반","시니어+개인"];
+const HOLD_STATUS   = ["산전홀드","산후홀드","출산홀드","홀드"];
+const ATTEND = ["출석","결석","노쇼"];
 const CLASS_TYPES = {
   mamabebe:["산전반","산전개인","산후반","산후개인"],
   lifestage:["키즈반","키즈개인","시니어반","시니어개인"],
@@ -263,7 +283,8 @@ const MEMBER_FILTERS = [
   {k:"all",  l:"전체 상태"},
   {k:"group",l:"그룹"}, {k:"private",l:"개인"},
   {k:"pre",  l:"산전"}, {k:"post",  l:"산후"},
-  {k:"birth",l:"출산"}, {k:"hold",  l:"홀드"}, {k:"end",l:"종료"},
+  {k:"birth",l:"출산"}, {k:"hold",  l:"홀드"},
+  {k:"re",   l:"재등록"}, {k:"end",l:"종료"},
 ];
 const PROGRAM_LABEL = { mamabebe:"MamaBebe", lifestage:"Life Stage" };
 const ROOMS = ["룸A(콤비리포머)","룸B(체어&바렐)","개인룸(강사실)","개인룸(원장실)"];
@@ -309,11 +330,18 @@ function fmtStamp(ts){
   return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 function chipClass(status){
-  if(!status) return "chip";
-  if(status==="종료") return "chip end";
-  if(status.includes("홀드")) return "chip hold";
-  return "chip " + (progOf(status)==="mamabebe" ? "mb" : "ls");
+  const s = status || "";
+  if(!s) return "chip";
+  if(s.includes("홀드")) return "chip hold";
+  if(s==="종료" || s==="재등록" || s.startsWith("출산")) return "chip done";
+  if(s.startsWith("산전")) return "chip pre";
+  if(s.startsWith("산후")) return "chip post";
+  if(s.startsWith("키즈")) return "chip kids";
+  if(s.startsWith("시니어")) return "chip senior";
+  return "chip";
 }
+const TRACK_CHIP = {prenatal:"pre", postnatal:"post", kids:"kids", senior:"senior"};
+function typeChip(t){ return "chip " + (TRACK_CHIP[trackOfType(t)] || ""); }
 function matchFilter(m, f){
   const s = m.status || "";
   switch(f){
@@ -323,12 +351,45 @@ function matchFilter(m, f){
     case "post":    return s.startsWith("산후");
     case "birth":   return s.startsWith("출산");
     case "hold":    return s.includes("홀드");
+    case "re":      return s === "재등록";
     case "end":     return s === "종료";
     default:        return true;
   }
 }
 
 /* ================= 공통 UI ================= */
+function DateInput({value, onChange, disabled, placeholder}){
+  const [raw,setRaw]=useState(value ? value.replace(/-/g,"") : "");
+  useEffect(()=>{ setRaw(value ? value.replace(/-/g,"") : ""); },[value]);
+  const handle=e=>{
+    const d=e.target.value.replace(/\D/g,"").slice(0,8);
+    setRaw(d);
+    if(d.length===8){
+      const y=+d.slice(0,4), m=+d.slice(4,6), dd=+d.slice(6,8);
+      if(m>=1&&m<=12&&dd>=1&&dd<=31) onChange(`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`);
+    } else if(d.length===0) onChange("");
+  };
+  const disp = raw.length>6 ? `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6)}`
+             : raw.length>4 ? `${raw.slice(0,4)}-${raw.slice(4)}` : raw;
+  return <input type="text" inputMode="numeric" value={disp} disabled={disabled}
+    onChange={handle} placeholder={placeholder || "숫자 8자리 (19950228)"} maxLength={10}/>;
+}
+function TimeSelect({value, onChange}){
+  const [h,m]=(value||"19:00").split(":");
+  const hours=[]; for(let i=6;i<=23;i++) hours.push(String(i).padStart(2,"0"));
+  const mins=["00","10","20","30","40","50"];
+  if(m && !mins.includes(m)) mins.push(m);
+  return (
+    <div className="timerow">
+      <select value={h} onChange={e=>onChange(`${e.target.value}:${m}`)}>
+        {hours.map(x=><option key={x} value={x}>{+x<12?"오전":"오후"} {(+x%12)===0?12:+x%12}시</option>)}
+      </select>
+      <select value={m} onChange={e=>onChange(`${h}:${e.target.value}`)}>
+        {mins.sort().map(x=><option key={x} value={x}>{x}분</option>)}
+      </select>
+    </div>
+  );
+}
 function Field({label, children}){
   return <label className="f"><span className="lb">{label}</span>{children}</label>;
 }
@@ -548,7 +609,7 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
           </select>
         </Field>
         <Field label="등록일">
-          <input type="date" value={f.registered_at||""} onChange={e=>set("registered_at",e.target.value)}/>
+          <DateInput value={f.registered_at||""} onChange={v=>set("registered_at",v)}/>
         </Field>
       </div>
 
@@ -566,7 +627,7 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
 
       <div className="grid2">
         <Field label={"생년월일" + (age!=null ? `  ·  만/연나이 ${age}세` : "")}>
-          <input type="date" value={f.birth_date||""} onChange={e=>set("birth_date",e.target.value)}/>
+          <DateInput value={f.birth_date||""} onChange={v=>set("birth_date",v)}/>
         </Field>
         <Field label="주 시간대">
           <input type="text" value={f.time_slot||""} placeholder="화·목 19:00" onChange={e=>set("time_slot",e.target.value)}/>
@@ -580,12 +641,11 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
               placeholder={isPre?"예: 18":"산전 상태에서만 사용"} onChange={e=>set("reg_week",e.target.value)}/>
           </Field>
           <Field label="출산예정일">
-            <input type="date" value={f.due_date||""} disabled={!isPre}
-              onChange={e=>set("due_date",e.target.value)}/>
+            <DateInput value={f.due_date||""} disabled={!isPre} onChange={v=>set("due_date",v)}/>
           </Field>
         </div>
         <Field label={"출산일" + (pw!=null ? `  ·  산후 ${pw}주` : "")}>
-          <input type="date" value={f.delivered_at||""} onChange={e=>set("delivered_at",e.target.value)}/>
+          <DateInput value={f.delivered_at||""} onChange={v=>set("delivered_at",v)}/>
         </Field>
         {isPre && f.delivered_at &&
           <div className="ok" style={{marginTop:-6}}>출산일이 있는데 상태가 아직 산전입니다. 산후 상태로 바꿔주세요.</div>}
@@ -655,7 +715,8 @@ function MembersPage({program, me, members, staff, reload, toast}){
   return (<>
     <div className="filters">
       <select value={filter} onChange={e=>setFilter(e.target.value)}>
-        {MEMBER_FILTERS.map(f=><option key={f.k} value={f.k}>{f.l}</option>)}
+        {MEMBER_FILTERS.filter(f=>admin || !["birth","re","end"].includes(f.k))
+          .map(f=><option key={f.k} value={f.k}>{f.l}</option>)}
       </select>
       <div className="search"><span className="i">⌕</span>
         <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="이름 · 전화번호 검색"/>
@@ -673,13 +734,13 @@ function MembersPage({program, me, members, staff, reload, toast}){
         ? <Empty title="표시할 회원이 없습니다" hint={admin?"회원 추가 버튼으로 첫 회원을 등록해 보세요.":"담당 회원이 등록되면 여기에 표시됩니다."}/>
         : <div className="scrollx"><table>
             <thead><tr>
-              <th className="sortable" onClick={()=>setDesc(d=>!d)}>등록일 {desc?"↓":"↑"}</th>
-              <th>상태</th><th>이름</th>
-              {admin && <th>연락처</th>}
-              {admin && <th>생년월일 · 나이</th>}
-              <th>주차</th>
-              <th>출산(예정)일</th>
-              {admin && <th>주 시간대</th>}
+              <th className="sortable" style={{width:82}} onClick={()=>setDesc(d=>!d)}>등록일 {desc?"↓":"↑"}</th>
+              <th style={{width:96}}>상태</th><th style={{width:74}}>이름</th>
+              {admin && <th style={{width:116}}>연락처</th>}
+              {admin && <th style={{width:126}}>생년월일 · 나이</th>}
+              <th style={{width:102}}>주차</th>
+              <th style={{width:92}}>출산(예정)일</th>
+              {admin && <th style={{width:100}}>주 시간대</th>}
               <th>특이사항</th>
             </tr></thead>
             <tbody>
@@ -748,7 +809,8 @@ function LogModal({log, program, me, staff, instructors, members, onClose, onSav
 
   useEffect(()=>{
     if(!log) return;
-    setAtt((log.class_log_attendees||[]).map(a=>({member_id:a.member_id, note:a.note||""})));
+    setAtt((log.class_log_attendees||[]).map(a=>(
+      {member_id:a.member_id, note:a.note||"", attend_status:a.attend_status||"출석"})));
     supa.from("class_log_revisions").select("*").eq("log_id",log.id)
       .order("edited_at",{ascending:false}).limit(20)
       .then(({data})=>setRevs(data||[]));
@@ -790,7 +852,8 @@ function LogModal({log, program, me, staff, instructors, members, onClose, onSav
     await supa.from("class_log_attendees").delete().eq("log_id",logId);
     if(att.length){
       const {error:e2}=await supa.from("class_log_attendees")
-        .insert(att.map(a=>({log_id:logId, member_id:a.member_id, note:a.note.trim()||null})));
+        .insert(att.map(a=>({log_id:logId, member_id:a.member_id,
+          note:a.note.trim()||null, attend_status:a.attend_status||"출석"})));
       if(e2){ setBusy(false); setErr(e2.message); return; }
     }
     setBusy(false);
@@ -843,8 +906,8 @@ function LogModal({log, program, me, staff, instructors, members, onClose, onSav
         </div>
 
         <div className="grid2">
-          <Field label="수업 날짜"><input type="date" value={f.class_date||""} onChange={e=>set("class_date",e.target.value)}/></Field>
-          <Field label="시간"><input type="time" value={f.class_time||""} onChange={e=>set("class_time",e.target.value)}/></Field>
+          <Field label="수업 날짜"><DateInput value={f.class_date||""} onChange={v=>set("class_date",v)}/></Field>
+          <Field label="시간"><TimeSelect value={f.class_time||"19:00"} onChange={v=>set("class_time",v)}/></Field>
         </div>
 
         <Field label="수업 내용">
@@ -852,7 +915,7 @@ function LogModal({log, program, me, staff, instructors, members, onClose, onSav
             placeholder={"기구 / 시퀀스를 줄바꿈으로 적어주세요.\n예)\nReformer\n- footwork\n- hip hinge"}/>
         </Field>
 
-        <Field label={`출석 회원 ${att.length?`· ${att.length}명`:""}`}>
+        <Field label={`등록 인원 ${att.length?`· 출석 ${att.filter(a=>(a.attend_status||"출석")==="출석").length} / ${att.length}명`:""}`}>
           <div className="pickbox">
             <div className="sr">
               <input type="text" value={pick} onChange={e=>setPick(e.target.value)}
@@ -863,7 +926,7 @@ function LogModal({log, program, me, staff, instructors, members, onClose, onSav
                 {candidates.length===0
                   ? <div style={{padding:"10px 11px",fontSize:12.5,color:"var(--muted)"}}>일치하는 회원이 없습니다.</div>
                   : candidates.map(m=>(
-                    <button key={m.id} type="button" onClick={()=>{ setAtt(a=>[...a,{member_id:m.id,note:""}]); setPick(""); }}>
+                    <button key={m.id} type="button" onClick={()=>{ setAtt(a=>[...a,{member_id:m.id,note:"",attend_status:"출석"}]); setPick(""); }}>
                       <span className={chipClass(m.status)}>{m.status}</span>
                       <b>{m.name}</b>
                       {m.current_week!=null && <span className="sm2">{m.current_week}주</span>}
@@ -876,6 +939,10 @@ function LogModal({log, program, me, staff, instructors, members, onClose, onSav
             <div className="att" key={a.member_id}>
               <div className="hd">
                 <b>{nameOf(a.member_id)}</b>
+                <select value={a.attend_status||"출석"} disabled={!canEdit}
+                  onChange={e=>setAtt(x=>x.map((v,j)=>j===i?{...v,attend_status:e.target.value}:v))}>
+                  {ATTEND.map(x=><option key={x} value={x}>{x}</option>)}
+                </select>
                 <div className="spacer"/>
                 {canEdit && <button className="x" type="button" title="빼기"
                   onClick={()=>setAtt(x=>x.filter((_,j)=>j!==i))}>×</button>}
@@ -892,6 +959,8 @@ function LogModal({log, program, me, staff, instructors, members, onClose, onSav
               <select value={f.instructor_id||""} onChange={e=>set("instructor_id",e.target.value)}>
                 <option value="">지정 안 함</option>
                 {instructors.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+                {f.instructor_id && !instructors.some(p=>p.id===f.instructor_id) &&
+                  <option value={f.instructor_id}>{staff[f.instructor_id]?.name || "퇴사자"}</option>}
               </select>
             ) : (
               <input type="text" disabled
@@ -983,7 +1052,7 @@ function LogsPage({program, me, logs, members, staff, instructors, reload, toast
                     <div style={{fontWeight:600}}>{fmtDate(l.class_date)}</div>
                     <div className="sm2">{fmtTime(l.class_time)}</div>
                   </td>
-                  <td><span className={"chip "+(l.program==="mamabebe"?"mb":"ls")}>{l.class_type}</span></td>
+                  <td><span className={typeChip(l.class_type)}>{l.class_type}</span></td>
                   <td className="sm2" style={{lineHeight:1.35}}>{l.room||"—"}</td>
                   <td>
                     <div style={{whiteSpace:"pre-wrap",maxHeight:74,overflow:"hidden",lineHeight:1.5}}>
@@ -992,11 +1061,17 @@ function LogsPage({program, me, logs, members, staff, instructors, reload, toast
                     {revN>0 && <div className="sm2" style={{marginTop:4}}>수정 {revN}회</div>}
                   </td>
                   <td className="sm2">
-                    {atts.length===0 ? "—" : atts.map(a=>(
-                      <div key={a.id}>
-                        {nameOf(a.member_id)||"회원"}{a.note ? <span style={{color:"var(--amber)"}}> · 메모</span> : ""}
-                      </div>
-                    ))}
+                    {atts.length===0 ? "—" : atts.map(a=>{
+                      const st=a.attend_status||"출석";
+                      return (
+                        <div key={a.id} style={{textDecoration:st==="출석"?"none":"line-through",
+                                                opacity:st==="출석"?1:.6}}>
+                          {nameOf(a.member_id)||"회원"}
+                          {st!=="출석" && <span> ({st})</span>}
+                          {a.note ? <span style={{color:"var(--amber)"}}> · 메모</span> : ""}
+                        </div>
+                      );
+                    })}
                   </td>
                   <td className="sm2">{staff[l.instructor_id]?.name || l.legacy_instructor || "—"}</td>
                 </tr>
@@ -1041,6 +1116,11 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
     else   await supa.from("instructor_tracks").insert({profile_id:pid, track:k});
     reload();
   };
+  const setActive=async(pid,active)=>{
+    const {error}=await supa.from("profiles").update({active}).eq("id",pid);
+    if(error) toast("변경 실패: "+error.message);
+    else { toast(active?"재직으로 되돌렸습니다":"퇴사 처리했습니다. 작성 기록은 그대로 남습니다"); reload(); }
+  };
   const changeRole=async(pid,role)=>{
     const {error}=await supa.from("profiles").update({role}).eq("id",pid);
     if(error) toast("역할 변경 실패: "+error.message); else { toast("역할을 변경했습니다"); reload(); }
@@ -1056,12 +1136,14 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
     <div className="panel" style={{marginBottom:18}}>
       <div className="panel-h"><h2>구성원</h2><span className="n">{profiles.length}명</span></div>
       <div className="scrollx"><table>
-        <thead><tr><th>이름</th><th>이메일</th><th style={{width:150}}>역할</th><th>담당 수업</th></tr></thead>
+        <thead><tr><th style={{width:110}}>이름</th><th>이메일</th>
+          <th style={{width:136}}>역할</th><th style={{width:180}}>담당 수업</th>
+          <th style={{width:96}}>재직</th></tr></thead>
         <tbody>
         {["owner","manager","instructor"].flatMap(r=>byRole[r]).map(p=>{
           const mine = (tracks[p.id]||[]);
           return (
-            <tr key={p.id}>
+            <tr key={p.id} style={{opacity:p.active?1:.5}}>
               <td className="nm">{p.name}{p.id===me.id && <span className="sm2"> (나)</span>}</td>
               <td className="sm2">{p.email}</td>
               <td>
@@ -1085,11 +1167,20 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
                   })}
                 </div>
               </td>
+              <td>
+                {owner && p.id!==me.id
+                  ? <button className={"chip"+(p.active?"":" off")} style={{cursor:"pointer"}}
+                      onClick={()=>setActive(p.id, !p.active)}>{p.active?"재직":"퇴사"}</button>
+                  : <span className={"chip"+(p.active?"":" off")}>{p.active?"재직":"퇴사"}</span>}
+              </td>
             </tr>
           );
         })}
         </tbody>
       </table></div>
+      <div style={{padding:"12px 16px",borderTop:"1px solid var(--line2)"}} className="sm2">
+        퇴사한 강사는 로그인과 신규 배정만 막힙니다. 그동안 작성한 수업일지와 수정 이력은 이름과 함께 그대로 남습니다.
+      </div>
     </div>
 
     <div className="panel">
@@ -1156,7 +1247,14 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
 function Dashboard({program, me, members, logs, staff, go}){
   const admin = me.role!=="instructor";
   const ms = members.filter(m=>program==="all"||m.program===program);
-  const active = ms.filter(m=>m.status!=="종료");
+  const nActive = ms.filter(m=>ACTIVE_STATUS.includes(m.status)).length;
+  const nHold   = ms.filter(m=>HOLD_STATUS.includes(m.status)).length;
+  const isLS = program==="lifestage";
+  const pair = isLS
+    ? [["키즈", ms.filter(m=>(m.status||"").startsWith("키즈")).length],
+       ["시니어", ms.filter(m=>(m.status||"").startsWith("시니어")).length]]
+    : [["산전", ms.filter(m=>(m.status||"").startsWith("산전")).length],
+       ["산후", ms.filter(m=>(m.status||"").startsWith("산후")).length]];
 
   const soon = ms
     .filter(m=>PRENATAL.includes(m.status) && m.due_date)
@@ -1169,14 +1267,16 @@ function Dashboard({program, me, members, logs, staff, go}){
 
   return (<>
     <div className="stats">
-      <div className="stat"><div className="v">{active.length}</div><div className="k">진행 중인 회원</div></div>
-      <div className="stat"><div className="v">{ms.filter(m=>m.status.startsWith("산전")).length}</div><div className="k">산전</div></div>
-      <div className="stat"><div className="v">{ms.filter(m=>m.status.startsWith("산후")).length}</div><div className="k">산후</div></div>
-      <div className="stat"><div className="v">{week.length}</div><div className="k">최근 7일 수업</div></div>
+      <div className="stat"><div className="v">{nActive}</div><div className="k">진행 중인 회원</div></div>
+      <div className="stat"><div className="v">{nHold}</div><div className="k">홀딩 중인 회원</div></div>
+      {pair.map(([l,n])=>(
+        <div className="stat" key={l}><div className="v">{n}</div><div className="k">{l}</div></div>
+      ))}
     </div>
 
     <div className="panel" style={{marginBottom:18}}>
-      <div className="panel-h"><h2>오늘 수업</h2><span className="n">{fmtDateLong(todayStr())}</span>
+      <div className="panel-h"><h2>오늘 수업</h2>
+        <span className="n">{fmtDateLong(todayStr())} · 최근 7일 {week.length}건</span>
         <div className="spacer"/>
         <button className="btn ghost sm" onClick={()=>go("logs")}>전체 보기</button>
       </div>
@@ -1187,9 +1287,11 @@ function Dashboard({program, me, members, logs, staff, go}){
             <tbody>{today.map(l=>(
               <tr key={l.id}>
                 <td className="nm">{fmtTime(l.class_time)}</td>
-                <td><span className={"chip "+(l.program==="mamabebe"?"mb":"ls")}>{l.class_type}</span></td>
+                <td><span className={typeChip(l.class_type)}>{l.class_type}</span></td>
                 <td className="sm2">{l.room||"—"}</td>
-                <td className="sm2">{(l.class_log_attendees||[]).map(a=>(members.find(m=>m.id===a.member_id)||{}).name).filter(Boolean).join(", ")||"—"}</td>
+                <td className="sm2">{(l.class_log_attendees||[])
+                  .filter(a=>(a.attend_status||"출석")==="출석")
+                  .map(a=>(members.find(m=>m.id===a.member_id)||{}).name).filter(Boolean).join(", ")||"—"}</td>
                 <td className="sm2">{staff[l.instructor_id]?.name||l.legacy_instructor||"—"}</td>
               </tr>
             ))}</tbody>
@@ -1255,7 +1357,7 @@ function App(){
       supa.from("profiles").select("*").order("name"),
       supa.from("instructor_tracks").select("*"),
       supa.from("class_logs")
-          .select("*, class_log_attendees(id,member_id,note), class_log_revisions(id,edited_by,edited_at)")
+          .select("*, class_log_attendees(id,member_id,note,attend_status), class_log_revisions(id,edited_by,edited_at)")
           .order("class_date",{ascending:false}).order("class_time",{ascending:false}).limit(1000),
       (r==="instructor" ? supa.from("member_cards").select("*") : supa.from("members").select("*")),
       (r==="instructor" ? Promise.resolve({data:[]}) : supa.from("invites").select("*").order("created_at",{ascending:false})),
@@ -1297,7 +1399,7 @@ function App(){
   },[me,loadAll]);
 
   const staff = useMemo(()=>{ const o={}; profiles.forEach(p=>o[p.id]=p); return o; },[profiles]);
-  const instructors = useMemo(()=>profiles.filter(p=>p.active),[profiles]);
+  const instructors = useMemo(()=>profiles.filter(p=>p.active !== false),[profiles]);
 
   // 프로그램에 따라 액센트 색 전환
   useEffect(()=>{
@@ -1312,10 +1414,14 @@ function App(){
   if(session===undefined) return <div className="authwrap"><div style={{color:"#8CA096"}}>불러오는 중…</div></div>;
   if(!session) return <AuthScreen/>;
   if(loading) return <div className="authwrap"><div style={{color:"#8CA096"}}>불러오는 중…</div></div>;
-  if(!me) return (
+  if(!me || me.active === false) return (
     <div className="authwrap"><div className="authcard">
       <div className="lg">DOUBLE</div>
-      <div className="err" style={{marginTop:16}}>이 계정에는 아직 권한이 없습니다. 대표관리자에게 문의하세요.</div>
+      <div className="err" style={{marginTop:16}}>
+        {me && me.active === false
+          ? "퇴사 처리된 계정입니다. 대표관리자에게 문의하세요."
+          : "이 계정에는 아직 권한이 없습니다. 대표관리자에게 문의하세요."}
+      </div>
       <button className="btn ghost" style={{width:"100%",justifyContent:"center"}}
         onClick={()=>supa.auth.signOut()}>로그아웃</button>
     </div></div>
