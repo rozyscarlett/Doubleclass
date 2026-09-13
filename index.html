@@ -1,2 +1,1341 @@
-window.SUPABASE_URL      = "https://zuudtjktjhsasgdtofxh.supabase.co/rest/v1/";
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>DOUBLE · MamaBebe / Life Stage</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+:root{
+  --ink:#17231F; --ink2:#3B4B45; --muted:#7A8A82; --faint:#A3B0A8;
+  --paper:#EEF1EB; --surface:#FFFFFF; --line:#DCE2D9; --line2:#EAEEE7;
+  --mb:#AC4A62; --mb-soft:#F8EAEE; --mb-line:#E9CBD4;
+  --ls:#2C7168; --ls-soft:#E3F0EC; --ls-line:#BFDCD4;
+  --amber:#A9702A; --amber-soft:#F7EEDF;
+  --danger:#A63A34;
+  --r:10px;
+  --accent:var(--ls); --accent-soft:var(--ls-soft); --accent-line:var(--ls-line);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  background:var(--paper); color:var(--ink);
+  font-size:14px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none;padding:0}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- shell ---------- */
+.shell{display:flex;min-height:100vh}
+.rail{
+  width:212px;flex:0 0 212px;background:var(--ink);color:#DCE4DF;
+  display:flex;flex-direction:column;padding:20px 12px;position:sticky;top:0;height:100vh;
+}
+.brand{padding:4px 10px 22px;display:flex;flex-direction:column;gap:2px}
+.brand b{font-size:17px;font-weight:700;letter-spacing:.14em;color:#fff}
+.brand span{font-size:11px;color:#8CA096;letter-spacing:.04em}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{
+  display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border-radius:8px;
+  color:#B9C7C0;font-size:13.5px;font-weight:500;text-align:left;transition:background .12s,color .12s;
+}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav button.on{background:#fff;color:var(--ink);font-weight:600}
+.nav .ic{width:16px;text-align:center;font-size:13px;opacity:.9}
+.rail-foot{margin-top:auto;padding:12px 10px 0;border-top:1px solid rgba(255,255,255,.1)}
+.rail-foot .who{font-size:12.5px;color:#E4EBE7;font-weight:600}
+.rail-foot .role{font-size:11px;color:#8CA096;margin-top:1px}
+.rail-foot button{margin-top:9px;font-size:11.5px;color:#8CA096}
+.rail-foot button:hover{color:#fff}
+
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  display:flex;align-items:center;gap:14px;padding:16px 26px 14px;
+  border-bottom:1px solid var(--line);background:var(--paper);position:sticky;top:0;z-index:20;flex-wrap:wrap;
+}
+.topbar h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.topbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.spacer{flex:1}
+.content{padding:22px 26px 80px;max-width:1220px;width:100%}
+
+/* program switch */
+.progsw{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.progsw button{padding:5px 13px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.progsw button.on{color:#fff}
+.progsw button.on[data-p="all"]{background:var(--ink2)}
+.progsw button.on[data-p="mamabebe"]{background:var(--mb)}
+.progsw button.on[data-p="lifestage"]{background:var(--ls)}
+
+/* ---------- controls ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;
+  background:var(--accent);color:#fff;font-size:13px;font-weight:600;
+}
+.btn:hover{filter:brightness(1.07)}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.ghost:hover{background:#fff;border-color:var(--faint);filter:none}
+.btn.danger{background:var(--danger)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:5px 10px;font-size:12px}
+input[type=text],input[type=date],input[type=time],input[type=number],input[type=email],
+input[type=password],input[type=tel],select,textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{resize:vertical;min-height:80px;line-height:1.55}
+label.f{display:block;margin-bottom:14px}
+label.f>.lb{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:5px;display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px}
+
+/* ---------- panels & tables ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.panel-h{padding:13px 16px;border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px}
+.panel-h h2{margin:0;font-size:14px;font-weight:700}
+.panel-h .n{font-size:12px;color:var(--muted);font-weight:500}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;font-size:11.5px;font-weight:600;color:var(--muted);
+  padding:9px 12px;border-bottom:1px solid var(--line);background:#FAFBF9;white-space:nowrap;
+}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--ink)}
+td{padding:11px 12px;border-bottom:1px solid var(--line2);vertical-align:top;font-size:13px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:#F8FAF7}
+.nm{font-weight:600}
+.due{white-space:nowrap}
+.due.est{font-style:italic;color:var(--faint)}
+.sm2{font-size:11.5px;color:var(--muted)}
+.empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:13px}
+.empty b{display:block;color:var(--ink);font-size:14px;margin-bottom:5px}
+
+/* status chip */
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  background:#F0F3EF;color:var(--ink2);border:1px solid var(--line)}
+.chip.mb{background:var(--mb-soft);color:var(--mb);border-color:var(--mb-line)}
+.chip.ls{background:var(--ls-soft);color:var(--ls);border-color:var(--ls-line)}
+.chip.hold{background:var(--amber-soft);color:var(--amber);border-color:#E8D6B8}
+.chip.end{background:#F1F2F1;color:var(--faint)}
+
+/* gestation meter — 40주 */
+.wk{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.wk b{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.wk .bar{width:54px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.wk .bar i{display:block;height:100%;background:var(--mb);border-radius:2px}
+.wk.late .bar i{background:var(--amber)}
+
+/* filters */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.filters select{width:auto;min-width:118px}
+.filters .search{position:relative;min-width:190px;flex:1;max-width:300px}
+.filters .search input{padding-left:30px}
+.filters .search .i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:13px}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.stat .v{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.stat .k{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(20,32,28,.42);display:flex;align-items:flex-start;
+  justify-content:center;padding:36px 16px;overflow-y:auto;z-index:100}
+.modal{background:var(--surface);border-radius:14px;width:100%;max-width:640px;box-shadow:0 20px 50px rgba(15,30,25,.22)}
+.modal.wide{max-width:820px}
+.modal-h{padding:18px 22px;border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--surface);border-radius:14px 14px 0 0;z-index:2}
+.modal-h h2{margin:0;font-size:16px;font-weight:700}
+.modal-b{padding:20px 22px}
+.modal-f{padding:14px 22px 18px;border-top:1px solid var(--line2);display:flex;gap:8px;align-items:center}
+.x{font-size:20px;color:var(--muted);line-height:1;padding:2px 6px}
+.x:hover{color:var(--ink)}
+
+/* attendee picker */
+.pickbox{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.pickbox .sr{padding:7px 10px;border-bottom:1px solid var(--line2)}
+.pickbox .sr input{border:none;padding:2px 0;box-shadow:none!important}
+.pickres{max-height:150px;overflow-y:auto}
+.pickres button{display:flex;width:100%;gap:8px;padding:8px 11px;text-align:left;font-size:13px;align-items:center;border-bottom:1px solid var(--line2)}
+.pickres button:hover{background:#F5F8F4}
+.att{border:1px solid var(--line);border-radius:8px;padding:10px 11px;margin-top:8px;background:#FAFBF9}
+.att .hd{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.att textarea{min-height:44px;font-size:12.5px;background:var(--surface)}
+
+/* revision trail */
+.rev{margin-top:14px;padding-top:11px;border-top:1px dashed var(--line)}
+.rev div{font-size:11px;color:var(--faint);line-height:1.7}
+
+/* auth */
+.authwrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--ink)}
+.authcard{background:var(--surface);border-radius:16px;padding:34px 30px;width:100%;max-width:392px}
+.authcard .lg{font-size:21px;font-weight:700;letter-spacing:.16em;margin-bottom:3px}
+.authcard .tag{font-size:12.5px;color:var(--muted);margin-bottom:24px}
+.err{background:#FBEDEC;border:1px solid #EDCFCD;color:var(--danger);padding:9px 11px;border-radius:8px;font-size:12.5px;margin-bottom:14px}
+.ok{background:var(--ls-soft);border:1px solid var(--ls-line);color:var(--ls);padding:9px 11px;border-radius:8px;font-size:12.5px;margin-bottom:14px}
+.swap{margin-top:16px;text-align:center;font-size:12.5px;color:var(--muted)}
+.swap button{color:var(--ls);font-weight:600}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:999px;font-size:13px;z-index:400;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+
+/* mobile */
+@media (max-width:880px){
+  .grid2,.grid3{grid-template-columns:1fr}
+  .shell{flex-direction:column}
+  .rail{width:auto;flex:none;height:auto;position:fixed;bottom:0;left:0;right:0;top:auto;
+    flex-direction:row;padding:6px 6px calc(6px + env(safe-area-inset-bottom));z-index:60;border-top:1px solid #2A3A34}
+  .brand,.rail-foot{display:none}
+  .nav{flex-direction:row;width:100%;gap:0}
+  .nav button{flex-direction:column;gap:3px;font-size:10.5px;padding:7px 2px;justify-content:center;text-align:center}
+  .nav .ic{font-size:15px}
+  .main{padding-bottom:64px}
+  .topbar{padding:14px 16px 12px}
+  .content{padding:16px 16px 40px}
+  .ov{padding:0}
+  .modal{border-radius:0;min-height:100vh}
+  .modal-h{border-radius:0}
+  .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .scrollx table{min-width:640px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* ===================================================================
+   1) Supabase 연결 정보 — 여기 두 줄만 본인 프로젝트 값으로 바꾸세요.
+      Supabase 대시보드 > Project Settings > API 에서 복사합니다.
+   =================================================================== */
+window.SUPABASE_URL      = "https://zuudtjktjhsasgdtofxh.supabase.co";
 window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1dWR0amt0amhzYXNnZHRvZnhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMTAzMzgsImV4cCI6MjEwNDg4NjMzOH0.FtYE6lvIwyBJeecG3DdxdrnxjFGZ-PZHcxtBkKSNx_s";
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.6/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+/* ================= 설정 ================= */
+const CFG_KEY = "double_cfg";
+function readCfg(){
+  try{
+    const s = JSON.parse(localStorage.getItem(CFG_KEY) || "null");
+    if (s && s.url && s.key) return s;
+  }catch(e){}
+  if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY)
+    return { url: window.SUPABASE_URL, key: window.SUPABASE_ANON_KEY };
+  return null;
+}
+let supa = null;
+const cfg0 = readCfg();
+if (cfg0) supa = window.supabase.createClient(cfg0.url, cfg0.key);
+
+/* ================= 상수 ================= */
+const PRENATAL = ["산전반","산전반+개인","산전개인","산전홀드"];
+const MB_STATUS = ["산전반","산전반+개인","산전개인","산전홀드","산후반","산후반+개인","산후개인","산후홀드","출산","출산홀드","종료"];
+const LS_STATUS = ["키즈반","키즈반+개인","키즈개인","시니어반","시니어+개인","종료"];
+const CLASS_TYPES = {
+  mamabebe:["산전반","산전개인","산후반","산후개인"],
+  lifestage:["키즈반","키즈개인","시니어반","시니어개인"],
+};
+const TRACKS = [
+  {k:"prenatal", l:"산전", prog:"mamabebe"},
+  {k:"postnatal",l:"산후", prog:"mamabebe"},
+  {k:"kids",     l:"키즈", prog:"lifestage"},
+  {k:"senior",   l:"시니어",prog:"lifestage"},
+];
+const ROLE_LABEL = { owner:"대표관리자", manager:"일반관리자", instructor:"강사" };
+const MEMBER_FILTERS = [
+  {k:"all",  l:"전체 상태"},
+  {k:"group",l:"그룹"}, {k:"private",l:"개인"},
+  {k:"pre",  l:"산전"}, {k:"post",  l:"산후"},
+  {k:"birth",l:"출산"}, {k:"hold",  l:"홀드"}, {k:"end",l:"종료"},
+];
+const PROGRAM_LABEL = { mamabebe:"MamaBebe", lifestage:"Life Stage" };
+const ROOMS = ["룸A(콤비리포머)","룸B(체어&바렐)","개인룸(강사실)","개인룸(원장실)"];
+
+/* ================= 유틸 ================= */
+const todayStr = () => new Date().toISOString().slice(0,10);
+function yearAge(b){ if(!b) return null; return new Date().getFullYear() - Number(String(b).slice(0,4)); }
+function daysBetween(a,b){ return Math.floor((new Date(b) - new Date(a)) / 86400000); }
+function currentWeek(m){
+  if(!m) return null;
+  if(!PRENATAL.includes(m.status)) return null;
+  if(m.reg_week == null || m.reg_week === "") return null;
+  return Number(m.reg_week) + Math.floor(daysBetween(m.registered_at, todayStr())/7);
+}
+function progOf(status){
+  if(!status) return null;
+  if(/^(산전|산후|출산)/.test(status)) return "mamabebe";
+  if(/^(키즈|시니어)/.test(status)) return "lifestage";
+  return null;
+}
+function trackOfType(t){
+  if(!t) return null;
+  if(t.startsWith("산전")) return "prenatal";
+  if(t.startsWith("산후")) return "postnatal";
+  if(t.startsWith("키즈")) return "kids";
+  return "senior";
+}
+function programOfType(t){ const k=trackOfType(t); return (k==="prenatal"||k==="postnatal")?"mamabebe":"lifestage"; }
+function fmtDate(d){ if(!d) return "—"; const [y,m,dd]=d.split("-"); return `${y.slice(2)}.${m}.${dd}`; }
+function fmtDateLong(d){ if(!d) return "—"; const x=new Date(d+"T00:00:00");
+  return `${d.slice(5,7)}월 ${d.slice(8,10)}일 (${"일월화수목금토"[x.getDay()]})`; }
+function fmtTime(t){ if(!t) return ""; const [h,m]=t.split(":"); const H=Number(h);
+  return `${H<12?"오전":"오후"} ${H%12===0?12:H%12}:${m}`; }
+function fmtStamp(ts){
+  const d=new Date(ts);
+  const p=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function chipClass(status){
+  if(!status) return "chip";
+  if(status==="종료") return "chip end";
+  if(status.includes("홀드")) return "chip hold";
+  return "chip " + (progOf(status)==="mamabebe" ? "mb" : "ls");
+}
+function matchFilter(m, f){
+  const s = m.status || "";
+  switch(f){
+    case "group":   return s.includes("반");
+    case "private": return s.includes("개인");
+    case "pre":     return s.startsWith("산전");
+    case "post":    return s.startsWith("산후");
+    case "birth":   return s.startsWith("출산");
+    case "hold":    return s.includes("홀드");
+    case "end":     return s === "종료";
+    default:        return true;
+  }
+}
+
+/* ================= 공통 UI ================= */
+function Field({label, children}){
+  return <label className="f"><span className="lb">{label}</span>{children}</label>;
+}
+function Modal({title, onClose, children, footer, wide}){
+  useEffect(()=>{
+    const h=e=>{ if(e.key==="Escape") onClose(); };
+    window.addEventListener("keydown",h);
+    document.body.style.overflow="hidden";
+    return ()=>{ window.removeEventListener("keydown",h); document.body.style.overflow=""; };
+  },[onClose]);
+  return (
+    <div className="ov" onMouseDown={e=>{ if(e.target===e.currentTarget) onClose(); }}>
+      <div className={"modal"+(wide?" wide":"")}>
+        <div className="modal-h">
+          <h2>{title}</h2><div className="spacer"/>
+          <button className="x" onClick={onClose} aria-label="닫기">×</button>
+        </div>
+        <div className="modal-b">{children}</div>
+        {footer && <div className="modal-f">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+function WeekMeter({week}){
+  if(week==null) return <span className="sm2">—</span>;
+  const pct = Math.max(0, Math.min(100, (week/40)*100));
+  return (
+    <span className={"wk"+(week>=37?" late":"")}>
+      <b>{week}주</b>
+      <span className="bar"><i style={{width:pct+"%"}}/></span>
+    </span>
+  );
+}
+function Empty({title, hint}){
+  return <div className="empty"><b>{title}</b>{hint}</div>;
+}
+
+/* =====================================================================
+   설정 화면 (URL/KEY 미입력 시)
+   ===================================================================== */
+function SetupScreen(){
+  const [url,setUrl]=useState(""); const [key,setKey]=useState(""); const [err,setErr]=useState("");
+  const save=()=>{
+    if(!url.trim()||!key.trim()){ setErr("두 값을 모두 입력해 주세요."); return; }
+    localStorage.setItem(CFG_KEY, JSON.stringify({url:url.trim(), key:key.trim()}));
+    location.reload();
+  };
+  return (
+    <div className="authwrap"><div className="authcard">
+      <div className="lg">DOUBLE</div>
+      <div className="tag">Supabase 프로젝트를 연결하면 시작할 수 있습니다.</div>
+      {err && <div className="err">{err}</div>}
+      <Field label="Project URL"><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxx.supabase.co"/></Field>
+      <Field label="anon public key"><input type="text" value={key} onChange={e=>setKey(e.target.value)} placeholder="eyJhbGciOi..."/></Field>
+      <button className="btn" style={{width:"100%",justifyContent:"center"}} onClick={save}>연결하기</button>
+      <div className="swap">Supabase 대시보드 → Project Settings → API 에서 복사할 수 있습니다.</div>
+    </div></div>
+  );
+}
+
+/* =====================================================================
+   로그인 / 회원가입
+   ===================================================================== */
+function AuthScreen(){
+  const [mode,setMode]=useState("login");
+  const [email,setEmail]=useState(""); const [pw,setPw]=useState(""); const [name,setName]=useState("");
+  const [err,setErr]=useState(""); const [ok,setOk]=useState(""); const [busy,setBusy]=useState(false);
+
+  const submit=async()=>{
+    setErr(""); setOk(""); setBusy(true);
+    try{
+      if(mode==="login"){
+        const {error}=await supa.auth.signInWithPassword({email:email.trim(),password:pw});
+        if(error) throw error;
+      }else{
+        const {error}=await supa.auth.signUp({
+          email:email.trim(), password:pw, options:{ data:{ name:name.trim() } }
+        });
+        if(error) throw error;
+        setOk("계정이 만들어졌습니다. 이제 로그인해 주세요.");
+        setMode("login"); setPw("");
+      }
+    }catch(e){
+      const m=(e.message||"").toLowerCase();
+      if(m.includes("database error") || m.includes("saving new user"))
+        setErr("등록되지 않은 이메일입니다. 대표관리자에게 계정 추가를 요청하세요.");
+      else if(m.includes("invalid login")) setErr("이메일 또는 비밀번호가 맞지 않습니다.");
+      else if(m.includes("already registered")) setErr("이미 가입된 이메일입니다. 로그인해 주세요.");
+      else if(m.includes("password")) setErr("비밀번호는 6자 이상이어야 합니다.");
+      else setErr(e.message || "처리 중 문제가 생겼습니다.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="authwrap"><div className="authcard">
+      <div className="lg">DOUBLE</div>
+      <div className="tag">MamaBebe · Life Stage 운영</div>
+      {err && <div className="err">{err}</div>}
+      {ok && <div className="ok">{ok}</div>}
+      {mode==="signup" && (
+        <Field label="이름"><input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="홍길동"/></Field>
+      )}
+      <Field label="이메일"><input type="email" value={email} autoComplete="username"
+        onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} /></Field>
+      <Field label="비밀번호"><input type="password" value={pw} autoComplete={mode==="login"?"current-password":"new-password"}
+        onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} /></Field>
+      <button className="btn" style={{width:"100%",justifyContent:"center"}} disabled={busy} onClick={submit}>
+        {busy ? "처리 중…" : (mode==="login" ? "로그인" : "계정 만들기")}
+      </button>
+      <div className="swap">
+        {mode==="login"
+          ? <>처음이신가요? <button onClick={()=>{setMode("signup");setErr("");}}>계정 만들기</button></>
+          : <>이미 계정이 있나요? <button onClick={()=>{setMode("login");setErr("");}}>로그인</button></>}
+      </div>
+      {mode==="signup" &&
+        <div className="swap" style={{marginTop:10,lineHeight:1.6}}>
+          첫 계정은 대표관리자가 됩니다. 이후에는 대표관리자가 팀 화면에서<br/>미리 등록한 이메일로만 가입할 수 있습니다.
+        </div>}
+    </div></div>
+  );
+}
+
+/* =====================================================================
+   회원 편집 모달
+   ===================================================================== */
+function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
+  const blank = {
+    program: program==="all" ? "mamabebe" : program,
+    registered_at: todayStr(), status:"", name:"", phone:"", birth_date:"",
+    reg_week:"", due_date:"", time_slot:"", emergency_phone:"", emergency_relation:"", notes:""
+  };
+  const [f,setF]=useState(member ? {...blank, ...member} : blank);
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState("");
+  const [logNotes,setLogNotes]=useState([]);
+  const isNew = !member;
+  const canDelete = me.role==="owner" && !isNew;
+  const statusList = f.program==="mamabebe" ? MB_STATUS : LS_STATUS;
+  const isPre = PRENATAL.includes(f.status);
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+
+  useEffect(()=>{
+    if(!member) return;
+    supa.from("member_log_notes").select("*").eq("member_id",member.id)
+      .order("class_date",{ascending:false}).limit(30)
+      .then(({data})=>setLogNotes(data||[]));
+  },[member]);
+
+  const save=async()=>{
+    if(!f.name.trim()){ setErr("이름을 입력해 주세요."); return; }
+    if(!f.status){ setErr("현재 상태를 선택해 주세요."); return; }
+    setBusy(true); setErr("");
+    const row={
+      program:f.program, registered_at:f.registered_at||todayStr(), status:f.status,
+      name:f.name.trim(), phone:f.phone||null, birth_date:f.birth_date||null,
+      reg_week: f.reg_week===""||f.reg_week==null ? null : Number(f.reg_week),
+      due_date:f.due_date||null, time_slot:f.time_slot||null,
+      emergency_phone:f.emergency_phone||null, emergency_relation:f.emergency_relation||null,
+      notes:f.notes||null
+    };
+    const q = isNew
+      ? supa.from("members").insert({...row, created_by:me.id})
+      : supa.from("members").update(row).eq("id",member.id);
+    const {error}=await q;
+    setBusy(false);
+    if(error){ setErr(error.message); return; }
+    toast(isNew?"회원을 추가했습니다":"회원 정보를 저장했습니다");
+    onSaved();
+  };
+
+  const remove=async()=>{
+    if(!confirm(`${f.name} 회원을 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    setBusy(true);
+    const {error}=await supa.from("members").delete().eq("id",member.id);
+    setBusy(false);
+    if(error){ setErr(error.message); return; }
+    toast("회원을 삭제했습니다"); onSaved();
+  };
+
+  const age = yearAge(f.birth_date);
+  const wk = currentWeek(f);
+
+  return (
+    <Modal title={isNew?"회원 추가":"회원 정보"} onClose={onClose} wide
+      footer={<>
+        <button className="btn" onClick={save} disabled={busy}>{busy?"저장 중…":"저장"}</button>
+        <button className="btn ghost" onClick={onClose}>취소</button>
+        <div className="spacer"/>
+        {canDelete && <button className="btn danger sm" onClick={remove}>삭제</button>}
+      </>}>
+      {err && <div className="err">{err}</div>}
+
+      <div className="grid2">
+        <Field label="프로그램">
+          <select value={f.program} disabled={!isNew}
+            onChange={e=>{ set("program",e.target.value); set("status",""); }}>
+            <option value="mamabebe">MamaBebe (산전·산후)</option>
+            <option value="lifestage">Life Stage (키즈·시니어)</option>
+          </select>
+        </Field>
+        <Field label="등록일">
+          <input type="date" value={f.registered_at||""} onChange={e=>set("registered_at",e.target.value)}/>
+        </Field>
+      </div>
+
+      <Field label="현재 상태">
+        <select value={f.status} onChange={e=>set("status",e.target.value)}>
+          <option value="">선택하세요</option>
+          {statusList.map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+      </Field>
+
+      <div className="grid2">
+        <Field label="이름"><input type="text" value={f.name} onChange={e=>set("name",e.target.value)}/></Field>
+        <Field label="전화번호"><input type="tel" value={f.phone||""} placeholder="010-0000-0000" onChange={e=>set("phone",e.target.value)}/></Field>
+      </div>
+
+      <div className="grid2">
+        <Field label={"생년월일" + (age!=null ? `  ·  만/연나이 ${age}세` : "")}>
+          <input type="date" value={f.birth_date||""} onChange={e=>set("birth_date",e.target.value)}/>
+        </Field>
+        <Field label="주 시간대">
+          <input type="text" value={f.time_slot||""} placeholder="화·목 19:00" onChange={e=>set("time_slot",e.target.value)}/>
+        </Field>
+      </div>
+
+      {f.program==="mamabebe" && (
+        <div className="grid2">
+          <Field label={"등록 시점 주차" + (isPre && wk!=null ? `  ·  오늘 ${wk}주차` : "")}>
+            <input type="number" min="1" max="45" value={f.reg_week??""} disabled={!isPre}
+              placeholder={isPre?"예: 18":"산전 상태에서만 사용"} onChange={e=>set("reg_week",e.target.value)}/>
+          </Field>
+          <Field label={isPre ? "출산예정일" : "출산일"}>
+            <input type="date" value={f.due_date||""} onChange={e=>set("due_date",e.target.value)}/>
+          </Field>
+        </div>
+      )}
+
+      <div className="grid2">
+        <Field label="비상연락처"><input type="tel" value={f.emergency_phone||""} onChange={e=>set("emergency_phone",e.target.value)}/></Field>
+        <Field label="비상연락처 관계"><input type="text" value={f.emergency_relation||""} placeholder="배우자 / 모" onChange={e=>set("emergency_relation",e.target.value)}/></Field>
+      </div>
+
+      <Field label="특이사항">
+        <textarea value={f.notes||""} onChange={e=>set("notes",e.target.value)} placeholder="부상 이력, 주의할 동작, 기타 메모"/>
+      </Field>
+
+      {logNotes.length>0 && (
+        <div className="rev" style={{marginTop:4}}>
+          <div style={{fontSize:12,fontWeight:700,color:"var(--ink)",marginBottom:8}}>수업일지에 기록된 특이사항</div>
+          {logNotes.map(n=>(
+            <div key={n.log_id} style={{marginBottom:9}}>
+              <div className="sm2" style={{fontWeight:600}}>
+                {fmtDate(n.class_date)} {fmtTime(n.class_time)} · {n.class_type}
+                {" · "}{staff[n.instructor_id]?.name || n.legacy_instructor || "담당 미지정"}
+              </div>
+              <div style={{fontSize:12.5,color:"var(--ink2)",whiteSpace:"pre-wrap"}}>{n.note}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/* =====================================================================
+   회원 목록
+   ===================================================================== */
+function MembersPage({program, me, members, staff, reload, toast}){
+  const [filter,setFilter]=useState("all");
+  const [q,setQ]=useState("");
+  const [desc,setDesc]=useState(true);
+  const [open,setOpen]=useState(null);   // member | "new"
+  const admin = me.role!=="instructor";
+
+  const rows = useMemo(()=>{
+    let r = members.filter(m => program==="all" || m.program===program);
+    r = r.filter(m => matchFilter(m, filter));
+    if(q.trim()){
+      const s=q.trim().toLowerCase();
+      r = r.filter(m => (m.name||"").toLowerCase().includes(s) || (m.phone||"").includes(s));
+    }
+    return r.sort((a,b)=>{
+      const d = (a.registered_at||"").localeCompare(b.registered_at||"");
+      return desc ? -d : d;
+    });
+  },[members,program,filter,q,desc]);
+
+  return (<>
+    <div className="filters">
+      <select value={filter} onChange={e=>setFilter(e.target.value)}>
+        {MEMBER_FILTERS.map(f=><option key={f.k} value={f.k}>{f.l}</option>)}
+      </select>
+      <div className="search"><span className="i">⌕</span>
+        <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="이름 · 전화번호 검색"/>
+      </div>
+      <div className="spacer"/>
+      {admin && <button className="btn" onClick={()=>setOpen("new")}>+ 회원 추가</button>}
+    </div>
+
+    <div className="panel">
+      <div className="panel-h">
+        <h2>회원 {program!=="all" && `· ${PROGRAM_LABEL[program]}`}</h2>
+        <span className="n">{rows.length}명</span>
+      </div>
+      {rows.length===0
+        ? <Empty title="표시할 회원이 없습니다" hint={admin?"회원 추가 버튼으로 첫 회원을 등록해 보세요.":"담당 회원이 등록되면 여기에 표시됩니다."}/>
+        : <div className="scrollx"><table>
+            <thead><tr>
+              <th className="sortable" onClick={()=>setDesc(d=>!d)}>등록일 {desc?"↓":"↑"}</th>
+              <th>상태</th><th>이름</th>
+              {admin && <th>연락처</th>}
+              {admin && <th>생년월일 · 나이</th>}
+              <th>현재 주차</th>
+              <th>출산(예정)일</th>
+              {admin && <th>주 시간대</th>}
+              <th>특이사항</th>
+            </tr></thead>
+            <tbody>
+            {rows.map(m=>{
+              const pre = PRENATAL.includes(m.status);
+              const wk = admin ? currentWeek(m) : m.current_week;
+              return (
+                <tr key={m.id} className="click" onClick={()=>setOpen(m)}>
+                  <td className="sm2">{fmtDate(m.registered_at)}</td>
+                  <td><span className={chipClass(m.status)}>{m.status}</span></td>
+                  <td className="nm">{m.name}</td>
+                  {admin && <td className="sm2">{m.phone||"—"}</td>}
+                  {admin && <td className="sm2">{m.birth_date ? `${fmtDate(m.birth_date)} · ${yearAge(m.birth_date)}세` : "—"}</td>}
+                  <td><WeekMeter week={wk}/></td>
+                  <td className={"due"+(pre?" est":"")}>{m.due_date?fmtDate(m.due_date):"—"}</td>
+                  {admin && <td className="sm2">{m.time_slot||"—"}</td>}
+                  <td className="sm2" style={{maxWidth:210,whiteSpace:"pre-wrap"}}>{m.notes||"—"}</td>
+                </tr>
+              );
+            })}
+            </tbody>
+          </table></div>}
+    </div>
+
+    {open && admin && (
+      <MemberModal member={open==="new"?null:open} program={program} me={me} staff={staff}
+        onClose={()=>setOpen(null)} onSaved={()=>{setOpen(null); reload();}} toast={toast}/>
+    )}
+    {open && !admin && open!=="new" && (
+      <Modal title={open.name} onClose={()=>setOpen(null)}>
+        <Field label="현재 상태"><div><span className={chipClass(open.status)}>{open.status}</span></div></Field>
+        <Field label="현재 주차"><div><WeekMeter week={open.current_week}/></div></Field>
+        <Field label="출산(예정)일">
+          <div className={"due"+(PRENATAL.includes(open.status)?" est":"")}>{open.due_date?fmtDate(open.due_date):"—"}</div>
+        </Field>
+        <Field label="특이사항"><div style={{whiteSpace:"pre-wrap"}}>{open.notes||"—"}</div></Field>
+      </Modal>
+    )}
+  </>);
+}
+
+/* =====================================================================
+   수업일지 모달
+   ===================================================================== */
+function LogModal({log, program, me, staff, instructors, members, onClose, onSaved, toast}){
+  const isNew = !log;
+  const admin = me.role!=="instructor";
+  const defType = (program==="all" ? CLASS_TYPES.mamabebe[0] : CLASS_TYPES[program][0]);
+  const [f,setF]=useState(log ? {...log} : {
+    class_type:defType, class_date:todayStr(), class_time:"19:00", room:"",
+    content:"", instructor_id: me.role==="instructor" ? me.id : ""
+  });
+  const [att,setAtt]=useState([]);          // [{member_id,note}]
+  const [pick,setPick]=useState("");
+  const [revs,setRevs]=useState([]);
+  const [busy,setBusy]=useState(false); const [err,setErr]=useState("");
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+
+  useEffect(()=>{
+    if(!log) return;
+    setAtt((log.class_log_attendees||[]).map(a=>({member_id:a.member_id, note:a.note||""})));
+    supa.from("class_log_revisions").select("*").eq("log_id",log.id)
+      .order("edited_at",{ascending:false}).limit(20)
+      .then(({data})=>setRevs(data||[]));
+  },[log]);
+
+  const typeProgram = programOfType(f.class_type);
+  const candidates = useMemo(()=>{
+    const chosen = new Set(att.map(a=>a.member_id));
+    const s = pick.trim().toLowerCase();
+    return members
+      .filter(m=>m.program===typeProgram && !chosen.has(m.id) && m.status!=="종료")
+      .filter(m=>!s || (m.name||"").toLowerCase().includes(s))
+      .slice(0,8);
+  },[members,att,pick,typeProgram]);
+
+  const nameOf=id=>(members.find(m=>m.id===id)||{}).name || "(삭제된 회원)";
+
+  const canEdit = admin || !log || log.author_id===me.id;
+
+  const save=async()=>{
+    if(!f.class_date){ setErr("수업 날짜를 입력해 주세요."); return; }
+    setBusy(true); setErr("");
+    const row={
+      class_type:f.class_type, class_date:f.class_date, class_time:f.class_time||null,
+      room:f.room||null, content:f.content||null,
+      instructor_id: f.instructor_id || (me.role==="instructor" ? me.id : null),
+    };
+    let logId = log?.id;
+    if(isNew){
+      const {data,error}=await supa.from("class_logs")
+        .insert({...row, author_id:me.id}).select("id").single();
+      if(error){ setBusy(false); setErr(error.message); return; }
+      logId=data.id;
+    }else{
+      const {error}=await supa.from("class_logs").update(row).eq("id",log.id);
+      if(error){ setBusy(false); setErr(error.message); return; }
+    }
+    // 출석: 통째로 다시 기록
+    await supa.from("class_log_attendees").delete().eq("log_id",logId);
+    if(att.length){
+      const {error:e2}=await supa.from("class_log_attendees")
+        .insert(att.map(a=>({log_id:logId, member_id:a.member_id, note:a.note.trim()||null})));
+      if(e2){ setBusy(false); setErr(e2.message); return; }
+    }
+    setBusy(false);
+    toast(isNew?"수업일지를 등록했습니다":"수업일지를 저장했습니다");
+    onSaved();
+  };
+
+  const remove=async()=>{
+    if(!confirm("이 수업일지를 삭제할까요? 되돌릴 수 없습니다.")) return;
+    setBusy(true);
+    const {error}=await supa.from("class_logs").delete().eq("id",log.id);
+    setBusy(false);
+    if(error){ setErr(error.message); return; }
+    toast("수업일지를 삭제했습니다"); onSaved();
+  };
+
+  const typeOptions = useMemo(()=>{
+    const base = program==="all"
+      ? [...CLASS_TYPES.mamabebe, ...CLASS_TYPES.lifestage]
+      : [...CLASS_TYPES[program]];
+    if(f.class_type && !base.includes(f.class_type)) base.unshift(f.class_type);
+    return base;
+  },[program, f.class_type]);
+
+  return (
+    <Modal title={isNew?"수업일지 작성":"수업일지"} onClose={onClose} wide
+      footer={<>
+        {canEdit && <button className="btn" onClick={save} disabled={busy}>{busy?"저장 중…":"저장"}</button>}
+        <button className="btn ghost" onClick={onClose}>{canEdit?"취소":"닫기"}</button>
+        <div className="spacer"/>
+        {me.role==="owner" && !isNew && <button className="btn danger sm" onClick={remove}>삭제</button>}
+      </>}>
+      {err && <div className="err">{err}</div>}
+      {!canEdit && <div className="ok">본인이 작성한 일지가 아니라 읽기 전용입니다.</div>}
+
+      <fieldset disabled={!canEdit} style={{border:"none",padding:0,margin:0}}>
+        <div className="grid2">
+          <Field label="수업 종류">
+            <select value={f.class_type} onChange={e=>{ set("class_type",e.target.value); setAtt([]); }}>
+              {typeOptions.map(t=><option key={t} value={t}>{t}</option>)}
+            </select>
+          </Field>
+          <Field label="룸">
+            <select value={f.room||""} onChange={e=>set("room",e.target.value)}>
+              <option value="">선택 안 함</option>
+              {ROOMS.map(r=><option key={r} value={r}>{r}</option>)}
+              {f.room && !ROOMS.includes(f.room) && <option value={f.room}>{f.room}</option>}
+            </select>
+          </Field>
+        </div>
+
+        <div className="grid2">
+          <Field label="수업 날짜"><input type="date" value={f.class_date||""} onChange={e=>set("class_date",e.target.value)}/></Field>
+          <Field label="시간"><input type="time" value={f.class_time||""} onChange={e=>set("class_time",e.target.value)}/></Field>
+        </div>
+
+        <Field label="수업 내용">
+          <textarea style={{minHeight:150}} value={f.content||""} onChange={e=>set("content",e.target.value)}
+            placeholder={"기구 / 시퀀스를 줄바꿈으로 적어주세요.\n예)\nReformer\n- footwork\n- hip hinge"}/>
+        </Field>
+
+        <Field label={`출석 회원 ${att.length?`· ${att.length}명`:""}`}>
+          <div className="pickbox">
+            <div className="sr">
+              <input type="text" value={pick} onChange={e=>setPick(e.target.value)}
+                placeholder="이름으로 검색해서 추가"/>
+            </div>
+            {pick.trim() && (
+              <div className="pickres">
+                {candidates.length===0
+                  ? <div style={{padding:"10px 11px",fontSize:12.5,color:"var(--muted)"}}>일치하는 회원이 없습니다.</div>
+                  : candidates.map(m=>(
+                    <button key={m.id} type="button" onClick={()=>{ setAtt(a=>[...a,{member_id:m.id,note:""}]); setPick(""); }}>
+                      <span className={chipClass(m.status)}>{m.status}</span>
+                      <b>{m.name}</b>
+                      {m.current_week!=null && <span className="sm2">{m.current_week}주</span>}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+          {att.map((a,i)=>(
+            <div className="att" key={a.member_id}>
+              <div className="hd">
+                <b>{nameOf(a.member_id)}</b>
+                <div className="spacer"/>
+                {canEdit && <button className="x" type="button" title="빼기"
+                  onClick={()=>setAtt(x=>x.filter((_,j)=>j!==i))}>×</button>}
+              </div>
+              <textarea value={a.note} placeholder="이 회원의 특이사항 (없으면 비워두세요)"
+                onChange={e=>setAtt(x=>x.map((v,j)=>j===i?{...v,note:e.target.value}:v))}/>
+            </div>
+          ))}
+        </Field>
+
+        <div className="grid2">
+          <Field label="담당자">
+            {admin ? (
+              <select value={f.instructor_id||""} onChange={e=>set("instructor_id",e.target.value)}>
+                <option value="">지정 안 함</option>
+                {instructors.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            ) : (
+              <input type="text" disabled
+                value={f.instructor_id ? (staff[f.instructor_id]?.name || me.name) : me.name}/>
+            )}
+          </Field>
+          <Field label="작성자">
+            <input type="text" disabled
+              value={isNew ? me.name : (staff[log.author_id]?.name || log.legacy_instructor || "가져온 기록")}/>
+          </Field>
+        </div>
+      </fieldset>
+
+      {!isNew && (
+        <div className="rev">
+          <div>등록 {fmtStamp(log.created_at)}</div>
+          {revs.map(r=>(
+            <div key={r.id}>수정 {fmtStamp(r.edited_at)} · {staff[r.edited_by]?.name || "알 수 없음"}</div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+/* =====================================================================
+   수업일지 목록
+   ===================================================================== */
+function LogsPage({program, me, logs, members, staff, instructors, reload, toast}){
+  const [track,setTrack]=useState("all");
+  const [q,setQ]=useState("");
+  const [desc,setDesc]=useState(true);
+  const [open,setOpen]=useState(null);
+
+  const tracksShown = TRACKS.filter(t=>program==="all"||t.prog===program);
+  const nameOf=id=>(members.find(m=>m.id===id)||{}).name;
+
+  const rows = useMemo(()=>{
+    let r = logs.filter(l => program==="all" || l.program===program);
+    if(track!=="all") r = r.filter(l=>l.track===track);
+    if(q.trim()){
+      const s=q.trim().toLowerCase();
+      r = r.filter(l =>
+        (l.content||"").toLowerCase().includes(s) ||
+        (l.class_type||"").includes(s) ||
+        (staff[l.instructor_id]?.name||l.legacy_instructor||"").includes(s) ||
+        (l.class_log_attendees||[]).some(a=>(nameOf(a.member_id)||"").includes(s))
+      );
+    }
+    return r.sort((a,b)=>{
+      const k1=(a.class_date||"")+(a.class_time||""), k2=(b.class_date||"")+(b.class_time||"");
+      return desc ? k2.localeCompare(k1) : k1.localeCompare(k2);
+    });
+  },[logs,program,track,q,desc,staff,members]);
+
+  return (<>
+    <div className="filters">
+      <select value={track} onChange={e=>setTrack(e.target.value)}>
+        <option value="all">전체 수업</option>
+        {tracksShown.map(t=><option key={t.k} value={t.k}>{t.l}</option>)}
+      </select>
+      <div className="search"><span className="i">⌕</span>
+        <input type="text" value={q} onChange={e=>setQ(e.target.value)} placeholder="내용 · 회원 · 강사 검색"/>
+      </div>
+      <div className="spacer"/>
+      <button className="btn" onClick={()=>setOpen("new")}>+ 일지 작성</button>
+    </div>
+
+    <div className="panel">
+      <div className="panel-h"><h2>수업일지</h2><span className="n">{rows.length}건</span></div>
+      {rows.length===0
+        ? <Empty title="표시할 일지가 없습니다" hint="일지 작성 버튼으로 오늘 수업을 기록해 보세요."/>
+        : <div className="scrollx"><table>
+            <thead><tr>
+              <th className="sortable" onClick={()=>setDesc(d=>!d)} style={{width:120}}>날짜 · 시간 {desc?"↓":"↑"}</th>
+              <th style={{width:88}}>수업</th>
+              <th style={{width:104}}>룸</th>
+              <th>내용</th>
+              <th style={{width:150}}>출석</th>
+              <th style={{width:88}}>담당</th>
+            </tr></thead>
+            <tbody>
+            {rows.map(l=>{
+              const atts=l.class_log_attendees||[];
+              const revN=(l.class_log_revisions||[]).length;
+              return (
+                <tr key={l.id} className="click" onClick={()=>setOpen(l)}>
+                  <td>
+                    <div style={{fontWeight:600}}>{fmtDate(l.class_date)}</div>
+                    <div className="sm2">{fmtTime(l.class_time)}</div>
+                  </td>
+                  <td><span className={"chip "+(l.program==="mamabebe"?"mb":"ls")}>{l.class_type}</span></td>
+                  <td className="sm2" style={{lineHeight:1.35}}>{l.room||"—"}</td>
+                  <td>
+                    <div style={{whiteSpace:"pre-wrap",maxHeight:74,overflow:"hidden",lineHeight:1.5}}>
+                      {l.content||"—"}
+                    </div>
+                    {revN>0 && <div className="sm2" style={{marginTop:4}}>수정 {revN}회</div>}
+                  </td>
+                  <td className="sm2">
+                    {atts.length===0 ? "—" : atts.map(a=>(
+                      <div key={a.id}>
+                        {nameOf(a.member_id)||"회원"}{a.note ? <span style={{color:"var(--amber)"}}> · 메모</span> : ""}
+                      </div>
+                    ))}
+                  </td>
+                  <td className="sm2">{staff[l.instructor_id]?.name || l.legacy_instructor || "—"}</td>
+                </tr>
+              );
+            })}
+            </tbody>
+          </table></div>}
+    </div>
+
+    {open && (
+      <LogModal log={open==="new"?null:open} program={program} me={me} staff={staff}
+        instructors={instructors} members={members}
+        onClose={()=>setOpen(null)} onSaved={()=>{setOpen(null); reload();}} toast={toast}/>
+    )}
+  </>);
+}
+
+/* =====================================================================
+   팀 (관리자)
+   ===================================================================== */
+function TeamPage({me, profiles, tracks, invites, reload, toast}){
+  const [inv,setInv]=useState({email:"",name:"",role:"instructor",tracks:[]});
+  const [err,setErr]=useState(""); const [busy,setBusy]=useState(false);
+  const owner = me.role==="owner";
+
+  const addInvite=async()=>{
+    if(!inv.email.trim()||!inv.name.trim()){ setErr("이메일과 이름을 모두 입력해 주세요."); return; }
+    setBusy(true); setErr("");
+    const {error}=await supa.from("invites").insert({
+      email:inv.email.trim().toLowerCase(), name:inv.name.trim(), role:inv.role,
+      tracks:inv.tracks, created_by:me.id
+    });
+    setBusy(false);
+    if(error){ setErr(error.code==="23505" ? "이미 등록된 이메일입니다." : error.message); return; }
+    setInv({email:"",name:"",role:"instructor",tracks:[]});
+    toast("계정을 등록했습니다. 본인이 이 이메일로 가입하면 됩니다.");
+    reload();
+  };
+
+  const toggleTrack=async(pid,k,on)=>{
+    if(on) await supa.from("instructor_tracks").delete().eq("profile_id",pid).eq("track",k);
+    else   await supa.from("instructor_tracks").insert({profile_id:pid, track:k});
+    reload();
+  };
+  const changeRole=async(pid,role)=>{
+    const {error}=await supa.from("profiles").update({role}).eq("id",pid);
+    if(error) toast("역할 변경 실패: "+error.message); else { toast("역할을 변경했습니다"); reload(); }
+  };
+  const removeInvite=async(email)=>{
+    await supa.from("invites").delete().eq("email",email); reload();
+  };
+
+  const byRole = { owner:[], manager:[], instructor:[] };
+  profiles.forEach(p=>byRole[p.role].push(p));
+
+  return (<>
+    <div className="panel" style={{marginBottom:18}}>
+      <div className="panel-h"><h2>구성원</h2><span className="n">{profiles.length}명</span></div>
+      <div className="scrollx"><table>
+        <thead><tr><th>이름</th><th>이메일</th><th style={{width:150}}>역할</th><th>담당 수업</th></tr></thead>
+        <tbody>
+        {["owner","manager","instructor"].flatMap(r=>byRole[r]).map(p=>{
+          const mine = (tracks[p.id]||[]);
+          return (
+            <tr key={p.id}>
+              <td className="nm">{p.name}{p.id===me.id && <span className="sm2"> (나)</span>}</td>
+              <td className="sm2">{p.email}</td>
+              <td>
+                {owner && p.id!==me.id
+                  ? <select value={p.role} onChange={e=>changeRole(p.id,e.target.value)}>
+                      {Object.keys(ROLE_LABEL).map(r=><option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+                    </select>
+                  : <span className="chip">{ROLE_LABEL[p.role]}</span>}
+              </td>
+              <td>
+                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                  {TRACKS.map(t=>{
+                    const on = mine.includes(t.k);
+                    return (
+                      <button key={t.k} className={"chip"+(on?" ls":"")}
+                        style={{cursor:"pointer",opacity:on?1:.55}}
+                        onClick={()=>toggleTrack(p.id,t.k,on)}>
+                        {t.l}
+                      </button>
+                    );
+                  })}
+                </div>
+              </td>
+            </tr>
+          );
+        })}
+        </tbody>
+      </table></div>
+    </div>
+
+    <div className="panel">
+      <div className="panel-h">
+        <h2>계정 등록</h2>
+        <span className="n">여기에 등록된 이메일만 가입할 수 있습니다</span>
+      </div>
+      <div style={{padding:"16px 16px 4px"}}>
+        {!owner && <div className="ok">계정 등록·삭제는 대표관리자만 할 수 있습니다.</div>}
+        {err && <div className="err">{err}</div>}
+        {owner && <>
+          <div className="grid3">
+            <Field label="이름"><input type="text" value={inv.name} onChange={e=>setInv(p=>({...p,name:e.target.value}))}/></Field>
+            <Field label="이메일"><input type="email" value={inv.email} onChange={e=>setInv(p=>({...p,email:e.target.value}))}/></Field>
+            <Field label="역할">
+              <select value={inv.role} onChange={e=>setInv(p=>({...p,role:e.target.value}))}>
+                <option value="instructor">강사</option>
+                <option value="manager">일반관리자</option>
+                <option value="owner">대표관리자</option>
+              </select>
+            </Field>
+          </div>
+          <Field label="담당 수업">
+            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+              {TRACKS.map(t=>{
+                const on=inv.tracks.includes(t.k);
+                return <button key={t.k} className={"chip"+(on?" ls":"")} style={{cursor:"pointer",opacity:on?1:.55}}
+                  onClick={()=>setInv(p=>({...p,tracks: on?p.tracks.filter(x=>x!==t.k):[...p.tracks,t.k]}))}>{t.l}</button>;
+              })}
+            </div>
+          </Field>
+          <div style={{marginBottom:16}}>
+            <button className="btn" onClick={addInvite} disabled={busy}>{busy?"등록 중…":"계정 등록"}</button>
+          </div>
+        </>}
+      </div>
+      {invites.length>0 && (
+        <div className="scrollx"><table>
+          <thead><tr><th>이름</th><th>이메일</th><th>역할</th><th>담당</th><th>상태</th>{owner&&<th></th>}</tr></thead>
+          <tbody>
+          {invites.map(i=>(
+            <tr key={i.email}>
+              <td className="nm">{i.name}</td>
+              <td className="sm2">{i.email}</td>
+              <td className="sm2">{ROLE_LABEL[i.role]}</td>
+              <td className="sm2">{(i.tracks||[]).map(k=>TRACKS.find(t=>t.k===k)?.l).join(", ")||"—"}</td>
+              <td>{i.used_at
+                ? <span className="chip ls">가입 완료</span>
+                : <span className="chip hold">가입 대기</span>}</td>
+              {owner && <td>{!i.used_at &&
+                <button className="btn ghost sm" onClick={()=>removeInvite(i.email)}>취소</button>}</td>}
+            </tr>
+          ))}
+          </tbody>
+        </table></div>
+      )}
+    </div>
+  </>);
+}
+
+/* =====================================================================
+   대시보드
+   ===================================================================== */
+function Dashboard({program, me, members, logs, staff, go}){
+  const admin = me.role!=="instructor";
+  const ms = members.filter(m=>program==="all"||m.program===program);
+  const active = ms.filter(m=>m.status!=="종료");
+  const wkOf = m => admin ? currentWeek(m) : m.current_week;
+
+  const soon = ms
+    .filter(m=>PRENATAL.includes(m.status) && m.due_date)
+    .filter(m=>{ const d=daysBetween(todayStr(), m.due_date); return d>=0 && d<=42; })
+    .sort((a,b)=>(a.due_date||"").localeCompare(b.due_date||""));
+
+  const today = logs.filter(l=>l.class_date===todayStr())
+    .sort((a,b)=>(a.class_time||"").localeCompare(b.class_time||""));
+  const week = logs.filter(l=>daysBetween(l.class_date, todayStr())>=0 && daysBetween(l.class_date, todayStr())<7);
+
+  return (<>
+    <div className="stats">
+      <div className="stat"><div className="v">{active.length}</div><div className="k">진행 중인 회원</div></div>
+      <div className="stat"><div className="v">{ms.filter(m=>m.status.startsWith("산전")).length}</div><div className="k">산전</div></div>
+      <div className="stat"><div className="v">{ms.filter(m=>m.status.startsWith("산후")).length}</div><div className="k">산후</div></div>
+      <div className="stat"><div className="v">{week.length}</div><div className="k">최근 7일 수업</div></div>
+    </div>
+
+    <div className="panel" style={{marginBottom:18}}>
+      <div className="panel-h"><h2>오늘 수업</h2><span className="n">{fmtDateLong(todayStr())}</span>
+        <div className="spacer"/>
+        <button className="btn ghost sm" onClick={()=>go("logs")}>전체 보기</button>
+      </div>
+      {today.length===0
+        ? <Empty title="오늘 등록된 일지가 없습니다" hint="수업이 끝나면 일지를 남겨주세요."/>
+        : <div className="scrollx"><table>
+            <thead><tr><th style={{width:90}}>시간</th><th style={{width:88}}>수업</th><th style={{width:104}}>룸</th><th>출석</th><th style={{width:88}}>담당</th></tr></thead>
+            <tbody>{today.map(l=>(
+              <tr key={l.id}>
+                <td className="nm">{fmtTime(l.class_time)}</td>
+                <td><span className={"chip "+(l.program==="mamabebe"?"mb":"ls")}>{l.class_type}</span></td>
+                <td className="sm2">{l.room||"—"}</td>
+                <td className="sm2">{(l.class_log_attendees||[]).map(a=>(members.find(m=>m.id===a.member_id)||{}).name).filter(Boolean).join(", ")||"—"}</td>
+                <td className="sm2">{staff[l.instructor_id]?.name||l.legacy_instructor||"—"}</td>
+              </tr>
+            ))}</tbody>
+          </table></div>}
+    </div>
+
+    <div className="panel">
+      <div className="panel-h"><h2>출산 예정 6주 이내</h2><span className="n">{soon.length}명</span></div>
+      {soon.length===0
+        ? <Empty title="해당하는 회원이 없습니다" hint="출산예정일이 6주 안으로 들어오면 여기에 모입니다."/>
+        : <div className="scrollx"><table>
+            <thead><tr><th>이름</th><th>상태</th><th>현재 주차</th><th>출산예정일</th><th>남은 날</th></tr></thead>
+            <tbody>{soon.map(m=>(
+              <tr key={m.id}>
+                <td className="nm">{m.name}</td>
+                <td><span className={chipClass(m.status)}>{m.status}</span></td>
+                <td><WeekMeter week={wkOf(m)}/></td>
+                <td className="due est">{fmtDate(m.due_date)}</td>
+                <td className="sm2">{daysBetween(todayStr(), m.due_date)}일</td>
+              </tr>
+            ))}</tbody>
+          </table></div>}
+    </div>
+  </>);
+}
+
+/* =====================================================================
+   앱 루트
+   ===================================================================== */
+const NAV = [
+  {k:"home",    l:"홈",     ic:"◈"},
+  {k:"members", l:"회원",   ic:"◎"},
+  {k:"logs",    l:"수업일지",ic:"▤"},
+  {k:"team",    l:"팀",     ic:"⌂", admin:true},
+];
+
+function App(){
+  const [session,setSession]=useState(undefined);
+  const [me,setMe]=useState(null);
+  const [page,setPage]=useState("home");
+  const [program,setProgram]=useState(()=>localStorage.getItem("double_prog")||"all");
+  const [members,setMembers]=useState([]);
+  const [logs,setLogs]=useState([]);
+  const [profiles,setProfiles]=useState([]);
+  const [tracks,setTracks]=useState({});
+  const [invites,setInvites]=useState([]);
+  const [msg,setMsg]=useState("");
+  const [loading,setLoading]=useState(true);
+
+  const toast=useCallback(t=>{ setMsg(t); setTimeout(()=>setMsg(""),2400); },[]);
+
+  useEffect(()=>{
+    supa.auth.getSession().then(({data})=>setSession(data.session));
+    const {data:sub}=supa.auth.onAuthStateChange((_e,s)=>setSession(s));
+    return ()=>sub.subscription.unsubscribe();
+  },[]);
+
+  useEffect(()=>{ localStorage.setItem("double_prog",program); },[program]);
+
+  const loadAll=useCallback(async(role)=>{
+    const r = role || me?.role;
+    const tasks = [
+      supa.from("profiles").select("*").order("name"),
+      supa.from("instructor_tracks").select("*"),
+      supa.from("class_logs")
+          .select("*, class_log_attendees(id,member_id,note), class_log_revisions(id,edited_by,edited_at)")
+          .order("class_date",{ascending:false}).order("class_time",{ascending:false}).limit(1000),
+      (r==="instructor" ? supa.from("member_cards").select("*") : supa.from("members").select("*")),
+      (r==="instructor" ? Promise.resolve({data:[]}) : supa.from("invites").select("*").order("created_at",{ascending:false})),
+    ];
+    const [p,t,l,m,i] = await Promise.all(tasks);
+    setProfiles(p.data||[]);
+    const tm={}; (t.data||[]).forEach(x=>{ (tm[x.profile_id]=tm[x.profile_id]||[]).push(x.track); });
+    setTracks(tm);
+    setLogs(l.data||[]);
+    setMembers(m.data||[]);
+    setInvites(i.data||[]);
+  },[me]);
+
+  useEffect(()=>{
+    if(session===undefined) return;
+    if(!session){ setMe(null); setLoading(false); return; }
+    let alive=true;
+    (async()=>{
+      setLoading(true);
+      const {data}=await supa.from("profiles").select("*").eq("id",session.user.id).single();
+      if(!alive) return;
+      if(!data){ setLoading(false); return; }
+      setMe(data);
+      await loadAll(data.role);
+      if(alive) setLoading(false);
+    })();
+    return ()=>{ alive=false; };
+  },[session]);
+
+  // 기기 간 실시간 동기화 + 화면 복귀 시 갱신
+  useEffect(()=>{
+    if(!me) return;
+    const ch = supa.channel("double-sync")
+      .on("postgres_changes",{event:"*",schema:"public"},()=>loadAll(me.role))
+      .subscribe();
+    const onFocus=()=>{ if(document.visibilityState==="visible") loadAll(me.role); };
+    document.addEventListener("visibilitychange",onFocus);
+    return ()=>{ supa.removeChannel(ch); document.removeEventListener("visibilitychange",onFocus); };
+  },[me,loadAll]);
+
+  const staff = useMemo(()=>{ const o={}; profiles.forEach(p=>o[p.id]=p); return o; },[profiles]);
+  const instructors = useMemo(()=>profiles.filter(p=>p.active),[profiles]);
+
+  // 프로그램에 따라 액센트 색 전환
+  useEffect(()=>{
+    const root=document.documentElement;
+    const mb = program==="mamabebe";
+    root.style.setProperty("--accent", mb?"var(--mb)":"var(--ls)");
+    root.style.setProperty("--accent-soft", mb?"var(--mb-soft)":"var(--ls-soft)");
+    root.style.setProperty("--accent-line", mb?"var(--mb-line)":"var(--ls-line)");
+  },[program]);
+
+  if(!supa) return <SetupScreen/>;
+  if(session===undefined) return <div className="authwrap"><div style={{color:"#8CA096"}}>불러오는 중…</div></div>;
+  if(!session) return <AuthScreen/>;
+  if(loading) return <div className="authwrap"><div style={{color:"#8CA096"}}>불러오는 중…</div></div>;
+  if(!me) return (
+    <div className="authwrap"><div className="authcard">
+      <div className="lg">DOUBLE</div>
+      <div className="err" style={{marginTop:16}}>이 계정에는 아직 권한이 없습니다. 대표관리자에게 문의하세요.</div>
+      <button className="btn ghost" style={{width:"100%",justifyContent:"center"}}
+        onClick={()=>supa.auth.signOut()}>로그아웃</button>
+    </div></div>
+  );
+
+  const admin = me.role!=="instructor";
+  const nav = NAV.filter(n=>!n.admin || admin);
+  const titles = {home:"홈", members:"회원", logs:"수업일지", team:"팀"};
+  const subs = {
+    home:"오늘 수업과 눈여겨볼 회원",
+    members:"등록일 순으로 정렬됩니다",
+    logs:"최신 수업부터 표시됩니다",
+    team:"역할과 담당 수업을 설정합니다",
+  };
+
+  return (
+    <div className="shell">
+      <aside className="rail">
+        <div className="brand"><b>DOUBLE</b><span>MamaBebe · Life Stage</span></div>
+        <nav className="nav">
+          {nav.map(n=>(
+            <button key={n.k} className={page===n.k?"on":""} onClick={()=>setPage(n.k)}>
+              <span className="ic">{n.ic}</span>{n.l}
+            </button>
+          ))}
+        </nav>
+        <div className="rail-foot">
+          <div className="who">{me.name}</div>
+          <div className="role">{ROLE_LABEL[me.role]}
+            {me.role==="instructor" && (tracks[me.id]||[]).length>0 &&
+              " · " + (tracks[me.id]||[]).map(k=>TRACKS.find(t=>t.k===k)?.l).join("·")}
+          </div>
+          <button onClick={()=>supa.auth.signOut()}>로그아웃</button>
+        </div>
+      </aside>
+
+      <div className="main">
+        <header className="topbar">
+          <div>
+            <h1>{titles[page]}</h1>
+            <div className="sub">{subs[page]}</div>
+          </div>
+          <div className="spacer"/>
+          {page!=="team" && (
+            <div className="progsw">
+              {[["all","전체"],["mamabebe","MamaBebe"],["lifestage","Life Stage"]].map(([k,l])=>(
+                <button key={k} data-p={k} className={program===k?"on":""} onClick={()=>setProgram(k)}>{l}</button>
+              ))}
+            </div>
+          )}
+        </header>
+
+        <main className="content">
+          {page==="home" && <Dashboard program={program} me={me} members={members} logs={logs} staff={staff} go={setPage}/>}
+          {page==="members" && <MembersPage program={program} me={me} members={members} staff={staff}
+            reload={()=>loadAll(me.role)} toast={toast}/>}
+          {page==="logs" && <LogsPage program={program} me={me} logs={logs} members={members} staff={staff}
+            instructors={instructors} reload={()=>loadAll(me.role)} toast={toast}/>}
+          {page==="team" && admin && <TeamPage me={me} profiles={profiles} tracks={tracks} invites={invites}
+            reload={()=>loadAll(me.role)} toast={toast}/>}
+        </main>
+      </div>
+
+      {msg && <div className="toast">{msg}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
