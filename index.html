@@ -3,7 +3,23 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>DOUBLE · MamaBebe / Life Stage</title>
+<title>더블필라테스</title>
+
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#F3F0E7" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<!-- iOS: 홈 화면 추가 시 전체 화면 + 아이콘 -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="DOUBLE" />
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-180.png" />
+<link rel="apple-touch-icon" sizes="167x167" href="icons/apple-touch-167.png" />
+<link rel="apple-touch-icon" sizes="152x152" href="icons/apple-touch-152.png" />
+<link rel="apple-touch-icon" sizes="120x120" href="icons/apple-touch-120.png" />
+<link rel="apple-touch-startup-image" href="icons/splash.png" />
+
+<link rel="icon" type="image/png" href="icons/favicon.png" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
 <style>
 :root{
@@ -527,7 +543,47 @@ function AuthScreen(){
 /* =====================================================================
    회원 편집 모달
    ===================================================================== */
-function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
+function MemberLogHistory({memberId, staff, onOpenLog}){
+  const [logs,setLogs]=useState(null);
+  useEffect(()=>{
+    let alive=true;
+    (async()=>{
+      const {data:att}=await supa.from("class_log_attendees").select("log_id").eq("member_id",memberId);
+      const ids=[...new Set((att||[]).map(a=>a.log_id))];
+      if(!ids.length){ if(alive) setLogs([]); return; }
+      const {data:ls}=await supa.from("class_logs")
+        .select("*, class_log_attendees(id,member_id,note,attend_status), class_log_revisions(id,edited_by,edited_at)")
+        .in("id",ids)
+        .order("class_date",{ascending:false}).order("class_time",{ascending:false});
+      if(alive) setLogs(ls||[]);
+    })();
+    return ()=>{ alive=false; };
+  },[memberId]);
+
+  if(logs===null) return null;
+  if(logs.length===0) return null;
+  return (
+    <div className="rev" style={{marginTop:4}}>
+      <div style={{fontSize:12,fontWeight:700,color:"var(--ink)",marginBottom:8}}>수업 참여 이력 · {logs.length}건</div>
+      {logs.map(l=>{
+        const mine=(l.class_log_attendees||[]).find(a=>a.member_id===memberId);
+        return (
+          <button key={l.id} type="button" onClick={()=>onOpenLog(l)}
+            style={{display:"block",width:"100%",textAlign:"left",background:"none",border:"none",
+                    padding:"7px 0",borderBottom:"1px solid var(--line2)",cursor:"pointer"}}>
+            <div className="sm2" style={{fontWeight:600,color:"var(--ink)"}}>
+              {fmtDate(l.class_date)} {fmtTime(l.class_time)} · {l.class_type}
+              {" · "}{staff[l.instructor_id]?.name || l.legacy_instructor || "담당 미지정"}
+            </div>
+            {mine?.note && <div style={{fontSize:12.5,color:"var(--ink2)",marginTop:2,whiteSpace:"pre-wrap"}}>{mine.note}</div>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MemberModal({member, program, me, staff, onClose, onSaved, onOpenLog, toast}){
   const blank = {
     program: program==="all" ? "mamabebe" : program,
     registered_at: todayStr(), status:"", name:"", phone:"", birth_date:"",
@@ -537,7 +593,6 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
   const [f,setF]=useState(member ? {...blank, ...member} : blank);
   const [busy,setBusy]=useState(false);
   const [err,setErr]=useState("");
-  const [logNotes,setLogNotes]=useState([]);
   const [history,setHistory]=useState([]);
   const isNew = !member;
   const canDelete = me.role==="owner" && !isNew;
@@ -547,9 +602,6 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
 
   useEffect(()=>{
     if(!member) return;
-    supa.from("member_log_notes").select("*").eq("member_id",member.id)
-      .order("class_date",{ascending:false}).limit(30)
-      .then(({data})=>setLogNotes(data||[]));
     supa.from("member_status_history").select("*").eq("member_id",member.id)
       .order("changed_at",{ascending:false}).limit(20)
       .then(({data})=>setHistory(data||[]));
@@ -672,20 +724,7 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
         </div>
       )}
 
-      {logNotes.length>0 && (
-        <div className="rev" style={{marginTop:4}}>
-          <div style={{fontSize:12,fontWeight:700,color:"var(--ink)",marginBottom:8}}>수업일지에 기록된 특이사항</div>
-          {logNotes.map(n=>(
-            <div key={n.log_id} style={{marginBottom:9}}>
-              <div className="sm2" style={{fontWeight:600}}>
-                {fmtDate(n.class_date)} {fmtTime(n.class_time)} · {n.class_type}
-                {" · "}{staff[n.instructor_id]?.name || n.legacy_instructor || "담당 미지정"}
-              </div>
-              <div style={{fontSize:12.5,color:"var(--ink2)",whiteSpace:"pre-wrap"}}>{n.note}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      {!isNew && <MemberLogHistory memberId={member.id} staff={staff} onOpenLog={onOpenLog}/>}
     </Modal>
   );
 }
@@ -693,12 +732,19 @@ function MemberModal({member, program, me, staff, onClose, onSaved, toast}){
 /* =====================================================================
    회원 목록
    ===================================================================== */
-function MembersPage({program, me, members, staff, reload, toast}){
+function MembersPage({program, me, members, staff, instructors, reload, toast}){
   const [filter,setFilter]=useState("all");
   const [q,setQ]=useState("");
+  const [sortKey,setSortKey]=useState("registered_at"); // "registered_at" | "name"
   const [desc,setDesc]=useState(true);
   const [open,setOpen]=useState(null);   // member | "new"
+  const [openLog,setOpenLog]=useState(null);
   const admin = me.role!=="instructor";
+
+  const toggleSort = key => {
+    if(sortKey===key) setDesc(d=>!d);
+    else { setSortKey(key); setDesc(key==="registered_at"); } // 등록일은 최신순 기본, 이름은 가나다순 기본
+  };
 
   const rows = useMemo(()=>{
     let r = members.filter(m => program==="all" || m.program===program);
@@ -708,10 +754,12 @@ function MembersPage({program, me, members, staff, reload, toast}){
       r = r.filter(m => (m.name||"").toLowerCase().includes(s) || (m.phone||"").includes(s));
     }
     return r.sort((a,b)=>{
-      const d = (a.registered_at||"").localeCompare(b.registered_at||"");
+      const d = sortKey==="name"
+        ? (a.name||"").localeCompare(b.name||"","ko")
+        : (a.registered_at||"").localeCompare(b.registered_at||"");
       return desc ? -d : d;
     });
-  },[members,program,filter,q,desc]);
+  },[members,program,filter,q,sortKey,desc]);
 
   return (<>
     <div className="filters">
@@ -735,8 +783,13 @@ function MembersPage({program, me, members, staff, reload, toast}){
         ? <Empty title="표시할 회원이 없습니다" hint={admin?"회원 추가 버튼으로 첫 회원을 등록해 보세요.":"담당 회원이 등록되면 여기에 표시됩니다."}/>
         : <div className="scrollx"><table>
             <thead><tr>
-              <th className="sortable" style={{width:82}} onClick={()=>setDesc(d=>!d)}>등록일 {desc?"↓":"↑"}</th>
-              <th style={{width:96}}>상태</th><th style={{width:74}}>이름</th>
+              <th className="sortable" style={{width:82}} onClick={()=>toggleSort("registered_at")}>
+                등록일 {sortKey==="registered_at" ? (desc?"↓":"↑") : ""}
+              </th>
+              <th style={{width:96}}>상태</th>
+              <th className="sortable" style={{width:74}} onClick={()=>toggleSort("name")}>
+                이름 {sortKey==="name" ? (desc?"↓":"↑") : ""}
+              </th>
               {admin && <th style={{width:116}}>연락처</th>}
               {admin && <th style={{width:126}}>생년월일 · 나이</th>}
               <th style={{width:102}}>주차</th>
@@ -772,7 +825,16 @@ function MembersPage({program, me, members, staff, reload, toast}){
 
     {open && admin && (
       <MemberModal member={open==="new"?null:open} program={program} me={me} staff={staff}
-        onClose={()=>setOpen(null)} onSaved={()=>{setOpen(null); reload();}} toast={toast}/>
+        onClose={()=>setOpen(null)}
+        onSaved={()=>{setOpen(null); reload();}}
+        onOpenLog={(log)=>{ setOpen(null); setOpenLog(log); }}
+        toast={toast}/>
+    )}
+    {openLog && (
+      <LogModal log={openLog} program={program} me={me} staff={staff} instructors={instructors} members={members}
+        onClose={()=>setOpenLog(null)}
+        onSaved={()=>{setOpenLog(null); reload();}}
+        toast={toast}/>
     )}
     {open && !admin && open!=="new" && (
       <Modal title={open.name} onClose={()=>setOpen(null)}>
@@ -1093,7 +1155,47 @@ function LogsPage({program, me, logs, members, staff, instructors, reload, toast
 /* =====================================================================
    팀 (관리자)
    ===================================================================== */
+function EditProfileModal({profile, onClose, onSaved, toast}){
+  const [f,setF]=useState({name:profile.name||"", phone:profile.phone||"", email:profile.email||""});
+  const [busy,setBusy]=useState(false);
+  const [err,setErr]=useState("");
+  const set=(k,v)=>setF(p=>({...p,[k]:v}));
+
+  const save=async()=>{
+    if(!f.name.trim()){ setErr("이름을 입력해 주세요."); return; }
+    if(!f.email.trim()){ setErr("이메일을 입력해 주세요."); return; }
+    setBusy(true); setErr("");
+    const {error}=await supa.from("profiles")
+      .update({name:f.name.trim(), phone:f.phone.trim()||null, email:f.email.trim().toLowerCase()})
+      .eq("id",profile.id);
+    setBusy(false);
+    if(error){ setErr(error.message); return; }
+    toast("정보를 저장했습니다");
+    onSaved();
+  };
+
+  return (
+    <Modal title={`${profile.name} 정보 수정`} onClose={onClose}
+      footer={<>
+        <button className="btn" onClick={save} disabled={busy}>{busy?"저장 중…":"저장"}</button>
+        <button className="btn ghost" onClick={onClose}>취소</button>
+      </>}>
+      {err && <div className="err">{err}</div>}
+      <Field label="이름"><input type="text" value={f.name} onChange={e=>set("name",e.target.value)}/></Field>
+      <Field label="전화번호"><input type="tel" value={f.phone} placeholder="010-0000-0000" onChange={e=>set("phone",e.target.value)}/></Field>
+      <Field label="이메일 (연락용 표시 정보)">
+        <input type="email" value={f.email} onChange={e=>set("email",e.target.value)}/>
+      </Field>
+      <div className="sm2" style={{marginTop:-8}}>
+        여기서 바꾼 이메일은 화면에 보이는 연락처일 뿐, 로그인에 쓰는 이메일은 바뀌지 않습니다.
+        로그인 이메일을 바꾸려면 본인이 새 이메일로 다시 가입해야 합니다.
+      </div>
+    </Modal>
+  );
+}
+
 function TeamPage({me, profiles, tracks, invites, reload, toast}){
+  const [editing,setEditing]=useState(null);
   const [inv,setInv]=useState({email:"",name:"",role:"instructor",tracks:[]});
   const [err,setErr]=useState(""); const [busy,setBusy]=useState(false);
   const owner = me.role==="owner";
@@ -1139,7 +1241,9 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
       <div className="scrollx"><table>
         <thead><tr><th style={{width:110}}>이름</th><th>이메일</th>
           <th style={{width:136}}>역할</th><th style={{width:180}}>담당 수업</th>
-          <th style={{width:96}}>재직</th></tr></thead>
+          <th style={{width:96}}>재직</th>
+          {owner && <th style={{width:80}}>관리</th>}
+          </tr></thead>
         <tbody>
         {["owner","manager","instructor"].flatMap(r=>byRole[r]).map(p=>{
           const mine = (tracks[p.id]||[]);
@@ -1174,6 +1278,9 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
                       onClick={()=>setActive(p.id, !p.active)}>{p.active?"재직":"퇴사"}</button>
                   : <span className={"chip"+(p.active?"":" off")}>{p.active?"재직":"퇴사"}</span>}
               </td>
+              {owner && (
+                <td><button className="btn ghost sm" onClick={()=>setEditing(p)}>수정</button></td>
+              )}
             </tr>
           );
         })}
@@ -1183,6 +1290,11 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
         퇴사한 강사는 로그인과 신규 배정만 막힙니다. 그동안 작성한 수업일지와 수정 이력은 이름과 함께 그대로 남습니다.
       </div>
     </div>
+
+    {editing && (
+      <EditProfileModal profile={editing} onClose={()=>setEditing(null)}
+        onSaved={()=>{setEditing(null); reload();}} toast={toast}/>
+    )}
 
     <div className="panel">
       <div className="panel-h">
@@ -1479,7 +1591,7 @@ function App(){
         <main className="content">
           {page==="home" && <Dashboard program={program} me={me} members={members} logs={logs} staff={staff} go={setPage}/>}
           {page==="members" && <MembersPage program={program} me={me} members={members} staff={staff}
-            reload={()=>loadAll(me.role)} toast={toast}/>}
+            instructors={instructors} reload={()=>loadAll(me.role)} toast={toast}/>}
           {page==="logs" && <LogsPage program={program} me={me} logs={logs} members={members} staff={staff}
             instructors={instructors} reload={()=>loadAll(me.role)} toast={toast}/>}
           {page==="team" && admin && <TeamPage me={me} profiles={profiles} tracks={tracks} invites={invites}
@@ -1493,6 +1605,12 @@ function App(){
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>
