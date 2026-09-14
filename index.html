@@ -152,6 +152,14 @@ tbody tr.click:hover{background:#F8FAF7}
 .chip.done{background:#F0F2F0;color:#7C8A84;border-color:#E2E6E1}
 .chip.off{background:#F0F2F0;color:#9AA79F;border-color:#E2E6E1}
 
+.toggle{position:relative;display:inline-block;width:44px;height:24px;border-radius:999px;
+  background:var(--line);border:none;padding:0;flex:none;cursor:pointer;transition:background .15s}
+.toggle.on{background:#2E8B57}
+.toggle .knob{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle.on .knob{left:22px}
+.toggle:disabled{opacity:.4;cursor:not-allowed}
+
 /* gestation meter — 40주 */
 .wk{display:flex;align-items:center;gap:7px;white-space:nowrap}
 .wk b{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -310,6 +318,14 @@ const ROOMS = ["룸A(콤비리포머)","룸B(체어&바렐)","개인룸(강사�
 const todayStr = () => new Date().toISOString().slice(0,10);
 function yearAge(b){ if(!b) return null; return new Date().getFullYear() - Number(String(b).slice(0,4)); }
 function daysBetween(a,b){ return Math.floor((new Date(b) - new Date(a)) / 86400000); }
+function nextBirthdayDays(birth_date){
+  if(!birth_date) return null;
+  const [,m,d] = birth_date.split("-").map(Number);
+  const today = new Date(todayStr()+"T00:00:00");
+  let next = new Date(today.getFullYear(), m-1, d);
+  if(next < today) next = new Date(today.getFullYear()+1, m-1, d);
+  return Math.round((next-today)/86400000);
+}
 function currentWeek(m){
   if(!m) return null;
   if(!PRENATAL.includes(m.status)) return null;
@@ -410,6 +426,14 @@ function TimeSelect({value, onChange}){
 function Field({label, children}){
   return <label className="f"><span className="lb">{label}</span>{children}</label>;
 }
+function Switch({checked, onChange, disabled}){
+  return (
+    <button type="button" className={"toggle"+(checked?" on":"")} disabled={disabled}
+      onClick={()=>onChange(!checked)} aria-label={checked?"재직":"퇴사"}>
+      <span className="knob"/>
+    </button>
+  );
+}
 function Modal({title, onClose, children, footer, wide}){
   useEffect(()=>{
     const h=e=>{ if(e.key==="Escape") onClose(); };
@@ -482,7 +506,8 @@ function SetupScreen(){
    ===================================================================== */
 function AuthScreen(){
   const [mode,setMode]=useState("login");
-  const [email,setEmail]=useState(""); const [pw,setPw]=useState(""); const [name,setName]=useState("");
+  const [email,setEmail]=useState(""); const [pw,setPw]=useState("");
+  const [name,setName]=useState(""); const [phone,setPhone]=useState("");
   const [err,setErr]=useState(""); const [ok,setOk]=useState(""); const [busy,setBusy]=useState(false);
 
   const submit=async()=>{
@@ -493,7 +518,7 @@ function AuthScreen(){
         if(error) throw error;
       }else{
         const {error}=await supa.auth.signUp({
-          email:email.trim(), password:pw, options:{ data:{ name:name.trim() } }
+          email:email.trim(), password:pw, options:{ data:{ name:name.trim(), phone:phone.trim() } }
         });
         if(error) throw error;
         setOk("계정이 만들어졌습니다. 이제 로그인해 주세요.");
@@ -517,9 +542,10 @@ function AuthScreen(){
       <div className="tag">MamaBebe · Life Stage 운영</div>
       {err && <div className="err">{err}</div>}
       {ok && <div className="ok">{ok}</div>}
-      {mode==="signup" && (
+      {mode==="signup" && (<>
         <Field label="이름"><input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="홍길동"/></Field>
-      )}
+        <Field label="전화번호"><input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="010-0000-0000"/></Field>
+      </>)}
       <Field label="이메일"><input type="email" value={email} autoComplete="username"
         onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} /></Field>
       <Field label="비밀번호"><input type="password" value={pw} autoComplete={mode==="login"?"current-password":"new-password"}
@@ -1270,7 +1296,7 @@ function EditInviteModal({invite, onClose, onSaved, toast}){
         </select>
       </Field>
       <Field label="담당 수업">
-        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,auto)",gap:6,justifyItems:"start"}}>
           {TRACKS.map(t=>{
             const on=f.tracks.includes(t.k);
             return <button key={t.k} type="button" className={"chip"+(on?" ls":"")} style={{cursor:"pointer",opacity:on?1:.55}}
@@ -1327,20 +1353,46 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
   const byRole = { owner:[], manager:[], instructor:[] };
   profiles.forEach(p=>byRole[p.role].push(p));
 
+  const moveOrder=async(role, idx, dir)=>{
+    const grp = byRole[role];
+    const j = idx+dir;
+    if(j<0 || j>=grp.length) return;
+    const a=grp[idx], b=grp[j];
+    await supa.from("profiles").update({sort_order:b.sort_order}).eq("id",a.id);
+    await supa.from("profiles").update({sort_order:a.sort_order}).eq("id",b.id);
+    reload();
+  };
+
+  const ordered = ["owner","manager","instructor"].flatMap(r=>
+    byRole[r].map((p,idx)=>({...p, _role:r, _idx:idx, _len:byRole[r].length}))
+  );
+
   return (<>
     <div className="panel" style={{marginBottom:18}}>
       <div className="panel-h"><h2>구성원</h2><span className="n">{profiles.length}명</span></div>
       <div className="scrollx"><table>
-        <thead><tr><th style={{width:110}}>이름</th><th>이메일</th>
-          <th style={{width:136}}>역할</th><th style={{width:180}}>담당 수업</th>
-          <th style={{width:96}}>재직</th>
-          {owner && <th style={{width:80}}>관리</th>}
+        <thead><tr>
+          {owner && <th style={{width:56}}>순서</th>}
+          <th style={{width:110}}>이름</th><th>이메일</th>
+          <th style={{width:136}}>역할</th><th style={{width:150}}>담당 수업</th>
+          <th style={{width:110}}>재직</th>
+          {owner && <th style={{width:70}}>관리</th>}
           </tr></thead>
         <tbody>
-        {["owner","manager","instructor"].flatMap(r=>byRole[r]).map(p=>{
+        {ordered.map(p=>{
           const mine = (tracks[p.id]||[]);
           return (
             <tr key={p.id} style={{opacity:p.active?1:.5}}>
+              {owner && (
+                <td>
+                  <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                    <button className="btn ghost sm" disabled={p._idx===0}
+                      onClick={()=>moveOrder(p._role,p._idx,-1)} style={{padding:"2px 8px"}}>▲</button>
+                    <button className="btn ghost sm" disabled={p._idx===p._len-1}
+                      onClick={()=>moveOrder(p._role,p._idx,1)} style={{padding:"2px 8px"}}>▼</button>
+                  </div>
+                </td>
+              )}
               <td className="nm">{p.name}{p.id===me.id && <span className="sm2"> (나)</span>}</td>
               <td className="sm2">{p.email}</td>
               <td>
@@ -1351,7 +1403,7 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
                   : <span className="chip">{ROLE_LABEL[p.role]}</span>}
               </td>
               <td>
-                <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(2,auto)",gap:6,justifyItems:"start"}}>
                   {TRACKS.map(t=>{
                     const on = mine.includes(t.k);
                     return (
@@ -1365,10 +1417,11 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
                 </div>
               </td>
               <td>
-                {owner && p.id!==me.id
-                  ? <button className={"chip"+(p.active?"":" off")} style={{cursor:"pointer"}}
-                      onClick={()=>setActive(p.id, !p.active)}>{p.active?"재직":"퇴사"}</button>
-                  : <span className={"chip"+(p.active?"":" off")}>{p.active?"재직":"퇴사"}</span>}
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <Switch checked={p.active} disabled={!owner || p.id===me.id}
+                    onChange={v=>setActive(p.id, v)}/>
+                  <span className="sm2">{p.active?"재직":"퇴사"}</span>
+                </div>
               </td>
               {owner && (
                 <td><button className="btn ghost sm" onClick={()=>setEditing(p)}>수정</button></td>
@@ -1409,7 +1462,7 @@ function TeamPage({me, profiles, tracks, invites, reload, toast}){
             </Field>
           </div>
           <Field label="담당 수업">
-            <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(2,auto)",gap:6,justifyItems:"start"}}>
               {TRACKS.map(t=>{
                 const on=inv.tracks.includes(t.k);
                 return <button key={t.k} className={"chip"+(on?" ls":"")} style={{cursor:"pointer",opacity:on?1:.55}}
@@ -1476,6 +1529,18 @@ function Dashboard({program, me, members, logs, staff, go}){
     .filter(m=>{ const d=daysBetween(todayStr(), m.due_date); return d>=0 && d<=42; })
     .sort((a,b)=>(a.due_date||"").localeCompare(b.due_date||""));
 
+  const birthdaySoon = ms
+    .filter(m=>m.status!=="종료" && m.birth_date)
+    .map(m=>({...m, _d: nextBirthdayDays(m.birth_date)}))
+    .filter(m=>m._d!=null && m._d<=30)
+    .sort((a,b)=>a._d-b._d);
+
+  const statusCounts = (()=>{
+    const order=[]; const seen=new Set();
+    [...MB_STATUS, ...LS_STATUS].forEach(st=>{ if(!seen.has(st)){ seen.add(st); order.push(st); } });
+    return order.map(st=>({status:st, n: ms.filter(m=>m.status===st).length})).filter(x=>x.n>0);
+  })();
+
   const today = logs.filter(l=>l.class_date===todayStr())
     .sort((a,b)=>(a.class_time||"").localeCompare(b.class_time||""));
   const week = logs.filter(l=>daysBetween(l.class_date, todayStr())>=0 && daysBetween(l.class_date, todayStr())<7);
@@ -1513,23 +1578,60 @@ function Dashboard({program, me, members, logs, staff, go}){
           </table></div>}
     </div>
 
-    <div className="panel">
-      <div className="panel-h"><h2>출산 예정 6주 이내</h2><span className="n">{soon.length}명</span></div>
-      {soon.length===0
-        ? <Empty title="해당하는 회원이 없습니다" hint="출산예정일이 6주 안으로 들어오면 여기에 모입니다."/>
-        : <div className="scrollx"><table>
-            <thead><tr><th>이름</th><th>상태</th><th>현재 주차</th><th>출산예정일</th><th>남은 날</th></tr></thead>
-            <tbody>{soon.map(m=>(
-              <tr key={m.id}>
-                <td className="nm">{m.name}</td>
-                <td><span className={chipClass(m.status)}>{m.status}</span></td>
-                <td><WeekCell m={m} admin={admin}/></td>
-                <td className="due est">{fmtDate(m.due_date)}</td>
-                <td className="sm2">{daysBetween(todayStr(), m.due_date)}일</td>
-              </tr>
-            ))}</tbody>
-          </table></div>}
-    </div>
+    {program==="mamabebe" && (
+      <div className="panel">
+        <div className="panel-h"><h2>출산 예정 6주 이내</h2><span className="n">{soon.length}명</span></div>
+        {soon.length===0
+          ? <Empty title="해당하는 회원이 없습니다" hint="출산예정일이 6주 안으로 들어오면 여기에 모입니다."/>
+          : <div className="scrollx"><table>
+              <thead><tr><th>이름</th><th>상태</th><th>현재 주차</th><th>출산예정일</th><th>남은 날</th></tr></thead>
+              <tbody>{soon.map(m=>(
+                <tr key={m.id}>
+                  <td className="nm">{m.name}</td>
+                  <td><span className={chipClass(m.status)}>{m.status}</span></td>
+                  <td><WeekCell m={m} admin={admin}/></td>
+                  <td className="due est">{fmtDate(m.due_date)}</td>
+                  <td className="sm2">{daysBetween(todayStr(), m.due_date)}일</td>
+                </tr>
+              ))}</tbody>
+            </table></div>}
+      </div>
+    )}
+
+    {program==="lifestage" && (
+      <div className="panel">
+        <div className="panel-h"><h2>생일이 다가오는 회원</h2><span className="n">30일 이내 · {birthdaySoon.length}명</span></div>
+        {birthdaySoon.length===0
+          ? <Empty title="해당하는 회원이 없습니다" hint="생일이 30일 안으로 들어오면 여기에 모입니다."/>
+          : <div className="scrollx"><table>
+              <thead><tr><th>이름</th><th>상태</th><th>생년월일</th><th>생일까지</th></tr></thead>
+              <tbody>{birthdaySoon.map(m=>(
+                <tr key={m.id}>
+                  <td className="nm">{m.name}</td>
+                  <td><span className={chipClass(m.status)}>{m.status}</span></td>
+                  <td className="sm2">{fmtDate(m.birth_date)} · {yearAge(m.birth_date)}세</td>
+                  <td className="sm2">{m._d===0 ? "오늘" : `${m._d}일`}</td>
+                </tr>
+              ))}</tbody>
+            </table></div>}
+      </div>
+    )}
+
+    {program==="all" && (
+      <div className="panel">
+        <div className="panel-h"><h2>상태별 현황</h2><span className="n">MamaBebe · Life Stage 전체</span></div>
+        {statusCounts.length===0
+          ? <Empty title="등록된 회원이 없습니다"/>
+          : <div style={{padding:"14px 16px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
+              {statusCounts.map(sc=>(
+                <div key={sc.status} style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span className={chipClass(sc.status)}>{sc.status}</span>
+                  <b style={{fontSize:14}}>{sc.n}</b>
+                </div>
+              ))}
+            </div>}
+      </div>
+    )}
   </>);
 }
 
@@ -1569,7 +1671,7 @@ function App(){
   const loadAll=useCallback(async(role)=>{
     const r = role || me?.role;
     const tasks = [
-      supa.from("profiles").select("*").order("name"),
+      supa.from("profiles").select("*").order("sort_order",{nullsFirst:false}).order("name"),
       supa.from("instructor_tracks").select("*"),
       supa.from("class_logs")
           .select("*, class_log_attendees(id,member_id,note,attend_status), class_log_revisions(id,edited_by,edited_at)")
