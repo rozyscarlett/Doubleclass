@@ -1686,7 +1686,7 @@ const NAV = [
 function App(){
   const [session,setSession]=useState(undefined);
   const [me,setMe]=useState(null);
-  const [page,setPage]=useState("home");
+  const [page,setPage]=useState(()=>localStorage.getItem("double_page")||"home");
   const [program,setProgram]=useState(()=>localStorage.getItem("double_prog")||"all");
   const [members,setMembers]=useState([]);
   const [logs,setLogs]=useState([]);
@@ -1705,6 +1705,7 @@ function App(){
   },[]);
 
   useEffect(()=>{ localStorage.setItem("double_prog",program); },[program]);
+  useEffect(()=>{ localStorage.setItem("double_page",page); },[page]);
 
   const loadAll=useCallback(async(role)=>{
     const r = role || me?.role;
@@ -1736,6 +1737,8 @@ function App(){
       if(!alive) return;
       if(!data){ setLoading(false); return; }
       setMe(data);
+      // 강사 계정인데 대표/일반관리자 전용 탭(팀)이 남아있으면 홈으로 되돌립니다
+      if(data.role==="instructor" && page==="team") setPage("home");
       await loadAll(data.role);
       if(alive) setLoading(false);
     })();
