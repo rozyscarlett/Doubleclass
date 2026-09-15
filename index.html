@@ -441,7 +441,7 @@ function Field({label, children}){
 }
 function PhoneInput({value, onChange, placeholder}){
   return (
-    <input type="tel" inputMode="numeric" value={value||""} placeholder={placeholder||"010-0000-0000"}
+    <input type="tel" inputMode="numeric" value={formatPhone(value)} placeholder={placeholder||"010-0000-0000"}
       onChange={e=>onChange(formatPhone(e.target.value))} maxLength={13}/>
   );
 }
@@ -882,7 +882,7 @@ function MembersPage({program, me, members, staff, instructors, reload, toast}){
                   <td><span className={chipClass(m.status)}>{m.status}</span></td>
                   <td className="nm">{m.name}</td>
                   {admin && <td className="sm2">{formatPhone(m.phone)||"—"}</td>}
-                  {admin && <td className="sm2">{m.birth_date ? `${fmtDate(m.birth_date)} · ${yearAge(m.birth_date)}세` : "—"}</td>}
+                  {admin && <td className="sm2">{m.birth_date ? `${fmtDate(m.birth_date)}(${yearAge(m.birth_date)}세)` : "—"}</td>}
                   <td><WeekCell m={m} admin={admin}/></td>
                   <td className={"due"+(pre?" est":"")}>
                     {pre ? (m.due_date?fmtDate(m.due_date):"—")
@@ -1641,7 +1641,7 @@ function Dashboard({program, me, members, logs, staff, go}){
                 <tr key={m.id}>
                   <td className="nm">{m.name}</td>
                   <td><span className={chipClass(m.status)}>{m.status}</span></td>
-                  <td className="sm2">{fmtDate(m.birth_date)} · {yearAge(m.birth_date)}세</td>
+                  <td className="sm2">{fmtDate(m.birth_date)}({yearAge(m.birth_date)}세)</td>
                   <td className="sm2">{m._d===0 ? "오늘" : `${m._d}일`}</td>
                 </tr>
               ))}</tbody>
