@@ -318,6 +318,19 @@ const ROOMS = ["룸A(콤비리포머)","룸B(체어&바렐)","개인룸(강사�
 const todayStr = () => new Date().toISOString().slice(0,10);
 function yearAge(b){ if(!b) return null; return new Date().getFullYear() - Number(String(b).slice(0,4)); }
 function daysBetween(a,b){ return Math.floor((new Date(b) - new Date(a)) / 86400000); }
+function formatPhone(raw){
+  const d = String(raw||"").replace(/\D/g,"").slice(0,11);
+  if(!d) return "";
+  if(d.startsWith("02")){
+    if(d.length<3) return d;
+    if(d.length<6) return `${d.slice(0,2)}-${d.slice(2)}`;
+    if(d.length<10) return `${d.slice(0,2)}-${d.slice(2,5)}-${d.slice(5)}`;
+    return `${d.slice(0,2)}-${d.slice(2,6)}-${d.slice(6,10)}`;
+  }
+  if(d.length<4) return d;
+  if(d.length<8) return `${d.slice(0,3)}-${d.slice(3)}`;
+  return `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7,11)}`;
+}
 function nextBirthdayDays(birth_date){
   if(!birth_date) return null;
   const [,m,d] = birth_date.split("-").map(Number);
@@ -425,6 +438,12 @@ function TimeSelect({value, onChange}){
 }
 function Field({label, children}){
   return <label className="f"><span className="lb">{label}</span>{children}</label>;
+}
+function PhoneInput({value, onChange, placeholder}){
+  return (
+    <input type="tel" inputMode="numeric" value={value||""} placeholder={placeholder||"010-0000-0000"}
+      onChange={e=>onChange(formatPhone(e.target.value))} maxLength={13}/>
+  );
 }
 function Switch({checked, onChange, disabled}){
   return (
@@ -544,7 +563,7 @@ function AuthScreen(){
       {ok && <div className="ok">{ok}</div>}
       {mode==="signup" && (<>
         <Field label="이름"><input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="홍길동"/></Field>
-        <Field label="전화번호"><input type="tel" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="010-0000-0000"/></Field>
+        <Field label="전화번호"><PhoneInput value={phone} onChange={setPhone}/></Field>
       </>)}
       <Field label="이메일"><input type="email" value={email} autoComplete="username"
         onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} /></Field>
@@ -730,7 +749,7 @@ function MemberModal({member, program, me, staff, onClose, onSaved, onOpenLog, t
 
       <div className="grid2">
         <Field label="이름"><input type="text" value={f.name} onChange={e=>set("name",e.target.value)}/></Field>
-        <Field label="전화번호"><input type="tel" value={f.phone||""} placeholder="010-0000-0000" onChange={e=>set("phone",e.target.value)}/></Field>
+        <Field label="전화번호"><PhoneInput value={f.phone} onChange={v=>set("phone",v)}/></Field>
       </div>
 
       <div className="grid2">
@@ -760,7 +779,7 @@ function MemberModal({member, program, me, staff, onClose, onSaved, onOpenLog, t
       </>)}
 
       <div className="grid2">
-        <Field label="비상연락처"><input type="tel" value={f.emergency_phone||""} onChange={e=>set("emergency_phone",e.target.value)}/></Field>
+        <Field label="비상연락처"><PhoneInput value={f.emergency_phone} onChange={v=>set("emergency_phone",v)}/></Field>
         <Field label="비상연락처 관계"><input type="text" value={f.emergency_relation||""} placeholder="배우자 / 모" onChange={e=>set("emergency_relation",e.target.value)}/></Field>
       </div>
 
@@ -862,7 +881,7 @@ function MembersPage({program, me, members, staff, instructors, reload, toast}){
                   <td className="sm2">{fmtDate(m.registered_at)}</td>
                   <td><span className={chipClass(m.status)}>{m.status}</span></td>
                   <td className="nm">{m.name}</td>
-                  {admin && <td className="sm2">{m.phone||"—"}</td>}
+                  {admin && <td className="sm2">{formatPhone(m.phone)||"—"}</td>}
                   {admin && <td className="sm2">{m.birth_date ? `${fmtDate(m.birth_date)} · ${yearAge(m.birth_date)}세` : "—"}</td>}
                   <td><WeekCell m={m} admin={admin}/></td>
                   <td className={"due"+(pre?" est":"")}>
@@ -1239,7 +1258,7 @@ function EditProfileModal({profile, onClose, onSaved, toast}){
       </>}>
       {err && <div className="err">{err}</div>}
       <Field label="이름"><input type="text" value={f.name} onChange={e=>set("name",e.target.value)}/></Field>
-      <Field label="전화번호"><input type="tel" value={f.phone} placeholder="010-0000-0000" onChange={e=>set("phone",e.target.value)}/></Field>
+      <Field label="전화번호"><PhoneInput value={f.phone} onChange={v=>set("phone",v)}/></Field>
       <Field label="이메일 (연락용 표시 정보)">
         <input type="email" value={f.email} onChange={e=>set("email",e.target.value)}/>
       </Field>
@@ -1535,11 +1554,24 @@ function Dashboard({program, me, members, logs, staff, go}){
     .filter(m=>m._d!=null && m._d<=30)
     .sort((a,b)=>a._d-b._d);
 
-  const statusCounts = (()=>{
-    const order=[]; const seen=new Set();
-    [...MB_STATUS, ...LS_STATUS].forEach(st=>{ if(!seen.has(st)){ seen.add(st); order.push(st); } });
-    return order.map(st=>({status:st, n: ms.filter(m=>m.status===st).length})).filter(x=>x.n>0);
+  const ym = todayStr().slice(0,7); // "YYYY-MM"
+  const monthLogs = logs.filter(l=>(l.class_date||"").slice(0,7)===ym);
+  const instrRows = (()=>{
+    const by = {};
+    monthLogs.forEach(l=>{
+      const key = l.instructor_id || (l.legacy_instructor ? "legacy:"+l.legacy_instructor : "unassigned");
+      if(!by[key]) by[key] = {
+        key, name: l.instructor_id ? (staff[l.instructor_id]?.name || "이름 없음") : (l.legacy_instructor || "담당 미지정"),
+        count:0, booked:0, attended:0
+      };
+      by[key].count += 1;
+      const atts = l.class_log_attendees||[];
+      by[key].booked += atts.length;
+      by[key].attended += atts.filter(a=>(a.attend_status||"출석")==="출석").length;
+    });
+    return Object.values(by).sort((a,b)=>b.count-a.count);
   })();
+  const monthRegistrations = ms.filter(m=>(m.registered_at||"").slice(0,7)===ym).length;
 
   const today = logs.filter(l=>l.class_date===todayStr())
     .sort((a,b)=>(a.class_time||"").localeCompare(b.class_time||""));
@@ -1619,17 +1651,23 @@ function Dashboard({program, me, members, logs, staff, go}){
 
     {program==="all" && (
       <div className="panel">
-        <div className="panel-h"><h2>상태별 현황</h2><span className="n">MamaBebe · Life Stage 전체</span></div>
-        {statusCounts.length===0
-          ? <Empty title="등록된 회원이 없습니다"/>
-          : <div style={{padding:"14px 16px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10}}>
-              {statusCounts.map(sc=>(
-                <div key={sc.status} style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span className={chipClass(sc.status)}>{sc.status}</span>
-                  <b style={{fontSize:14}}>{sc.n}</b>
-                </div>
-              ))}
-            </div>}
+        <div className="panel-h"><h2>강사별 이번 달 수업</h2>
+          <span className="n">{ym.replace("-",".")} · 등록 회원 {monthRegistrations}명</span>
+        </div>
+        {instrRows.length===0
+          ? <Empty title="이번 달 등록된 일지가 없습니다"/>
+          : <div className="scrollx"><table>
+              <thead><tr><th>강사</th><th style={{width:90}}>수업 수</th>
+                <th style={{width:100}}>총 예약인원</th><th style={{width:90}}>출석인원</th></tr></thead>
+              <tbody>{instrRows.map(r=>(
+                <tr key={r.key}>
+                  <td className="nm">{r.name}</td>
+                  <td>{r.count}건</td>
+                  <td>{r.booked}명</td>
+                  <td>{r.attended}명</td>
+                </tr>
+              ))}</tbody>
+            </table></div>}
       </div>
     )}
   </>);
